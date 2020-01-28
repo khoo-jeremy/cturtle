@@ -34,7 +34,8 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 	nLasers= (msg->angle_max-msg->angle_min)/msg->angle_increment;
     desiredNLasers= DEG2RAD(desiredAngle)/msg->angle_increment;
     // ROS_INFO("Size of laser scan array: %i and size of offset: %i", nLasers, desiredNLasers);
-
+    minLaserDist = std::numeric_limits<float>::infinity();
+    
     if(desiredAngle * M_PI/180 <msg->angle_max && -desiredAngle * M_PI/180>msg->angle_min)
     {
         for(uint32_t laser_idx= nLasers/2-desiredNLasers; laser_idx < nLasers/2 + desiredNLasers; ++laser_idx)
@@ -80,16 +81,31 @@ int main(int argc, char **argv)
     start = std::chrono::system_clock::now();
     uint64_t secondsElapsed = 0;
 
-    float angular = 0.0;
-    float linear = 0.0;
+    // float angular = 0.0;
+    // float linear = 0.1;
 
     while(ros::ok() && secondsElapsed <= 480) {
         ros::spinOnce();
-        //fill with your code
 
-        vel.angular.z = angular;
-        vel.linear.x = linear;
-        vel_pub.publish(vel);
+        // std::cout<<minLaserDist<<std::endl;
+
+        if(minLaserDist < 0.6 || minLaserDist == std::numeric_limits<float>::infinity()){
+            std::chrono::time_point<std::chrono::system_clock> turn_start;
+            turn_start= std::chrono::system_clock::now();
+            uint64_t run_time= 0;
+
+            while(run_time <= 1){
+                vel.angular.z = 0.5;
+                vel.linear.x = 0.0;
+                vel_pub.publish(vel);
+
+                run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
+            }
+        }else{
+            vel.angular.z = 0.0;
+            vel.linear.x = 0.1;
+            vel_pub.publish(vel);
+        }
 
         // The last thing to do is to update the timer.
         secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
