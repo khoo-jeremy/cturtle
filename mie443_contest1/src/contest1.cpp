@@ -14,12 +14,12 @@
 // #define N_BUMPER(3)
 #define RAD2DEG(rad) ((rad) * 180 / M_PI)
 #define DEG2RAD(deg) ((deg) * M_PI / 180)
-
+#define INF std::numeric_limits<float>::infinity()
 float angular = 0.0;
 float linear = 0.0;
 
 float posX= 0.0, posY = 0.0, yaw = 0.0;
-float minLaserDist = std::numeric_limits<float>::infinity();
+float minLaserDist = INF;
 int minLaserIdx= 0;
 int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 5; //smallest angle lasers can detect
 
@@ -38,7 +38,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 	nLasers= (msg->angle_max-msg->angle_min)/msg->angle_increment;
     desiredNLasers= DEG2RAD(desiredAngle)/msg->angle_increment; 
     // ROS_INFO("Size of laser scan array: %i and size of offset: %i", nLasers, desiredNLasers);
-    minLaserDist = std::numeric_limits<float>::infinity();
+    minLaserDist = INF;
     
     if(desiredAngle * M_PI/180 <msg->angle_max && -desiredAngle * M_PI/180>msg->angle_min)
     {
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
         // std::cout<<minLaserDist<<std::endl;
         
 
-        if(minLaserDist < 0.6 || minLaserDist == std::numeric_limits<float>::infinity()){
+        if(minLaserDist < 0.6 || minLaserDist == INF){
             decelerate(vel, vel_pub);
             if(minLaserIdx < desiredNLasers/2){ 
                 turn(0, 45, vel, vel_pub); //turn right
