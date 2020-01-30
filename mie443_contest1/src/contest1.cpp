@@ -81,19 +81,19 @@ void decelerate(geometry_msgs::Twist vel, ros::Publisher vel_pub)
         vel_pub.publish(vel);
     }
 }
-void turn(std::string dir, int angle_deg, geometry_msgs::Twist vel, ros::Publisher vel_pub){
+void turn(int dir, int angle_deg, geometry_msgs::Twist vel, ros::Publisher vel_pub){
     std::chrono::time_point<std::chrono::system_clock> turn_start;
     turn_start= std::chrono::system_clock::now();
     uint64_t run_time= 0;
 
     float angle_rad= DEG2RAD(angle_deg);
     float turn_vel= ANGULAR_VEL; 
-    if(dir.compare("right") == 0){
-        turn_vel *= -1;
+    if(dir == 0){
+        turn_vel = ANGULAR_VEL * -1;
     }
 
     while(run_time <= time_to_turn(angle_rad)){
-        vel.angular.z = turn_vel; //turn right
+        vel.angular.z = turn_vel; 
         vel.linear.x = 0.0;
         vel_pub.publish(vel);
 
@@ -133,13 +133,13 @@ int main(int argc, char **argv)
         if(minLaserDist < 0.6 || minLaserDist == std::numeric_limits<float>::infinity()){
             decelerate(vel, vel_pub);
             if(minLaserIdx < desiredNLasers/2){ 
-                turn("right", 45, vel, vel_pub);
+                turn(0, 45, vel, vel_pub); //turn right
             }else{
-                turn("left", 45, vel, vel_pub);
+                turn(1, 45, vel, vel_pub); //turn left
             }
         }else{
             vel.angular.z = 0.0;
-            vel.linear.x = 0.1;
+            vel.linear.x = 0.25;
             vel_pub.publish(vel);
         }
 
