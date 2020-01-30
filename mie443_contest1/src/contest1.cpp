@@ -44,16 +44,22 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     {
         for(uint32_t laser_idx= nLasers/2-desiredNLasers; laser_idx < nLasers/2 + desiredNLasers; ++laser_idx)
         {
-            minLaserDist= std::min(minLaserDist, msg->ranges[laser_idx]);
-            minLaserIdx= laser_idx;
+            if(minLaserDist > msg->ranges[laser_idx]){
+                minLaserDist= msg->ranges[laser_idx];
+                minLaserIdx= laser_idx;
+            }
+            ROS_INFO("minLaserIdx: %f", minLaserIdx);
 
         }
     }else
     {
         for(uint32_t laser_idx= 0; laser_idx < nLasers; ++laser_idx)
         {
-            minLaserDist= std::min(minLaserDist, msg->ranges[laser_idx]);
-            minLaserIdx= laser_idx;
+            if(minLaserDist > msg->ranges[laser_idx]){
+                minLaserDist= msg->ranges[laser_idx];
+                minLaserIdx= laser_idx;
+            }
+            ROS_INFO("minLaserIdx: %f", minLaserIdx);
         }
     }
     ROS_INFO("Minimum distance from object: %f", minLaserDist);
