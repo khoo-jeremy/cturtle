@@ -20,7 +20,10 @@ float linear = 0.0;
 
 float posX= 0.0, posY = 0.0, yaw = 0.0;
 float minLaserDist = std::numeric_limits<float>::infinity();
-int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 5;
+int minLaserIdx= 0;
+int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 5; //smallest angle lasers can detect
+
+const float ANGULAR_VEL= 0.5; //positive = turn left
 
 uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, kobuki_msgs::BumperEvent::RELEASED, kobuki_msgs::BumperEvent::RELEASED};
 
@@ -32,7 +35,7 @@ void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
 	nLasers= (msg->angle_max-msg->angle_min)/msg->angle_increment;
-    desiredNLasers= DEG2RAD(desiredAngle)/msg->angle_increment;
+    desiredNLasers= DEG2RAD(desiredAngle)/msg->angle_increment; 
     // ROS_INFO("Size of laser scan array: %i and size of offset: %i", nLasers, desiredNLasers);
     minLaserDist = std::numeric_limits<float>::infinity();
     
@@ -41,12 +44,15 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
         for(uint32_t laser_idx= nLasers/2-desiredNLasers; laser_idx < nLasers/2 + desiredNLasers; ++laser_idx)
         {
             minLaserDist= std::min(minLaserDist, msg->ranges[laser_idx]);
+            minLaserIdx= laser_idx;
+
         }
     }else
     {
         for(uint32_t laser_idx= 0; laser_idx < nLasers; ++laser_idx)
         {
             minLaserDist= std::min(minLaserDist, msg->ranges[laser_idx]);
+            minLaserIdx= laser_idx;
         }
     }
     ROS_INFO("Minimum distance from object: %f", minLaserDist);
@@ -59,6 +65,30 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
     yaw = tf::getYaw(msg->pose.pose.orientation);
     tf::getYaw(msg->pose.pose.orientation);
     // ROS_INFO("Position: (%f, %f) Orientation: %f rad or %f degrees", posX, posY, yaw, RAD2DEG(yaw));
+}
+
+float time_to_turn(float angle_rad){
+    return angle_rad/ANGULAR_VEL;
+}
+
+void turn(std::string dir, int angle_deg, geometry_msgs::Twist vel, ros::Publisher vel_pub){
+    std::chrono::time_point<std::chrono::system_clock> turn_start;
+    turn_start= std::chrono::system_clock::now();
+    uint64_t run_time= 0;
+
+    float angle_rad= DEG2RAD(angle_deg);
+    float turn_vel= ANGULAR_VEL; 
+    if(dir.compare("right") == 0){
+        turn_vel *= -1;
+    }
+
+    while(run_time <= time_to_turn(angle_rad)){
+        vel.angular.z = turn_vel; //turn right
+        vel.linear.x = 0.0;
+        vel_pub.publish(vel);
+
+        run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
+    }
 }
 
 int main(int argc, char **argv)
@@ -88,18 +118,13 @@ int main(int argc, char **argv)
         ros::spinOnce();
 
         // std::cout<<minLaserDist<<std::endl;
+        
 
         if(minLaserDist < 0.6 || minLaserDist == std::numeric_limits<float>::infinity()){
-            std::chrono::time_point<std::chrono::system_clock> turn_start;
-            turn_start= std::chrono::system_clock::now();
-            uint64_t run_time= 0;
-
-            while(run_time <= 1){
-                vel.angular.z = 0.5;
-                vel.linear.x = 0.0;
-                vel_pub.publish(vel);
-
-                run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
+            if(minLaserIdx < desiredNLasers/2){ 
+                turn("right", 45, vel, vel_pub);
+            }else{
+                turn("left", 45, vel, vel_pub);
             }
         }else{
             vel.angular.z = 0.0;
