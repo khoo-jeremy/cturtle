@@ -6,6 +6,7 @@
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <license>Apache 2.0</license>
 
+  <build_depend>rospy</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>message_generation</build_depend>
@@ -14,6 +15,8 @@
   <run_depend>cv_bridge</run_depend>
   <run_depend>image_transport</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>rospy</run_depend>
+  
 
   <buildtool_depend>catkin</buildtool_depend>
 
