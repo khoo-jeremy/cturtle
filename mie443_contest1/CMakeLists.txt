@@ -8,6 +8,7 @@ add_compile_options(-std=c++11)
 find_package(OpenCV 3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
+	rospy
 	cv_bridge
 	genmsg
 	image_transport
