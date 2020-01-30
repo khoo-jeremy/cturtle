@@ -15,6 +15,7 @@
 #define RAD2DEG(rad) ((rad) * 180 / M_PI)
 #define DEG2RAD(deg) ((deg) * M_PI / 180)
 #define INF std::numeric_limits<float>::infinity()
+
 float angular = 0.0;
 float linear = 0.0;
 
@@ -40,7 +41,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     // ROS_INFO("Size of laser scan array: %i and size of offset: %i", nLasers, desiredNLasers);
     minLaserDist = INF;
     
-    if(desiredAngle * M_PI/180 <msg->angle_max && -desiredAngle * M_PI/180>msg->angle_min)
+    if(desiredAngle * M_PI/180 < msg->angle_max && -desiredAngle * M_PI/180>msg->angle_min)
     {
         for(uint32_t laser_idx= nLasers/2-desiredNLasers; laser_idx < nLasers/2 + desiredNLasers; ++laser_idx)
         {
@@ -75,7 +76,7 @@ float time_to_turn(float angle_rad){
 void decelerate(geometry_msgs::Twist vel, ros::Publisher vel_pub)
 {
     vel.angular.z = 0.0;
-    for(int i=0.06; i>=0; i=i-0.03)
+    for(int i=0.2; i>=0; i=i-0.05)
     {
         vel.linear.x = i;
         vel_pub.publish(vel);
