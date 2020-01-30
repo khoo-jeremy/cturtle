@@ -30,6 +30,7 @@ uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, kobuki_msgs::BumperEvent
 void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
 {
 	bumper[msg->bumper]= msg->state;
+
 }
 
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
@@ -71,6 +72,15 @@ float time_to_turn(float angle_rad){
     return angle_rad/ANGULAR_VEL;
 }
 
+void decelerate(geometry_msgs::Twist vel, ros::Publisher vel_pub)
+{
+    vel.angular.z = 0.0;
+    for(int i=0.06; i>=0; i=i-0.03)
+    {
+        vel.linear.x = i;
+        vel_pub.publish(vel);
+    }
+}
 void turn(std::string dir, int angle_deg, geometry_msgs::Twist vel, ros::Publisher vel_pub){
     std::chrono::time_point<std::chrono::system_clock> turn_start;
     turn_start= std::chrono::system_clock::now();
@@ -121,6 +131,7 @@ int main(int argc, char **argv)
         
 
         if(minLaserDist < 0.6 || minLaserDist == std::numeric_limits<float>::infinity()){
+            decelerate(vel, vel_pub);
             if(minLaserIdx < desiredNLasers/2){ 
                 turn("right", 45, vel, vel_pub);
             }else{
