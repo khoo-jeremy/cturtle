@@ -50,12 +50,13 @@ def	take_action(regions):
     msg.angular.z	=	angular_z
 
 def laserCallBack(laser_msg):
+    num = len(laser_msg.ranges) / 5
     regions	=	{
-        'right': min(min(laser_msg.ranges[0:100]),	10),
-        'fright': min(min(laser_msg.ranges[101:200]),	10),
-        'front': min(min(laser_msg.ranges[201:300]),	10),
-        'fleft': min(min(laser_msg.ranges[301:400]),	10),
-        'left': min(min(laser_msg.ranges[401:500]),	10),
+        'right': min(min(laser_msg.ranges[0:num]),	10),
+        'fright': min(min(laser_msg.ranges[num+1:2*num]),	10),
+        'front': min(min(laser_msg.ranges[2*num+1:3*num]),	10),
+        'fleft': min(min(laser_msg.ranges[3*num+1:4*num]),	10),
+        'left': min(min(laser_msg.ranges[4*num+1:]),	10),
     }
     take_action(regions)
 
