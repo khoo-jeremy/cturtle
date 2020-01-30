@@ -22,7 +22,7 @@ float linear = 0.0;
 float posX= 0.0, posY = 0.0, yaw = 0.0;
 float minLaserDist = INF;
 int minLaserIdx= 0;
-int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 5; //smallest angle lasers can detect
+int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 20;
 
 const float ANGULAR_VEL= 0.5; //positive = turn left
 
@@ -49,7 +49,6 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
                 minLaserDist= msg->ranges[laser_idx];
                 minLaserIdx= laser_idx;
             }
-            ROS_INFO("minLaserIdx: %f", minLaserIdx);
 
         }
     }else
@@ -60,10 +59,9 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
                 minLaserDist= msg->ranges[laser_idx];
                 minLaserIdx= laser_idx;
             }
-            ROS_INFO("minLaserIdx: %f", minLaserIdx);
         }
     }
-    ROS_INFO("Minimum distance from object: %f", minLaserDist);
+    // ROS_INFO("Minimum distance from object: %f", minLaserDist);
 }
 
 void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -79,15 +77,15 @@ float time_to_turn(float angle_rad){
     return angle_rad/ANGULAR_VEL;
 }
 
-void decelerate(geometry_msgs::Twist vel, ros::Publisher vel_pub)
-{
-    vel.angular.z = 0.0;
-    for(int i=0.2; i>=0; i=i-0.05)
-    {
-        vel.linear.x = i;
-        vel_pub.publish(vel);
-    }
-}
+// void decelerate(geometry_msgs::Twist vel, ros::Publisher vel_pub)
+// {
+//     vel.angular.z = 0.0;
+//     for(int i=0.2; i>=0; i=i-0.05)
+//     {
+//         vel.linear.x = i;
+//         vel_pub.publish(vel);
+//     }
+// }
 void turn(int dir, int angle_deg, geometry_msgs::Twist vel, ros::Publisher vel_pub){
     std::chrono::time_point<std::chrono::system_clock> turn_start;
     turn_start= std::chrono::system_clock::now();
@@ -138,8 +136,10 @@ int main(int argc, char **argv)
         
 
         if(minLaserDist < 0.6 || minLaserDist == INF){
-            decelerate(vel, vel_pub);
-            if(minLaserIdx < desiredNLasers/2){ 
+            // decelerate(vel, vel_pub);
+            ROS_INFO("minLaserIdx: %i", minLaserIdx);
+            ROS_INFO("desiredNLasers: %i", desiredNLasers);
+            if(minLaserIdx < nLasers/2){ 
                 turn(0, 45, vel, vel_pub); //turn right
             }else{
                 turn(1, 45, vel, vel_pub); //turn left
