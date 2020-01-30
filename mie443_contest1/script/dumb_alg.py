@@ -63,11 +63,10 @@ def main():
     rospy.init_node('dumb_alg', disable_signals=True)
     rate = rospy.Rate(10) # 10hz
     vel_pub = rospy.Publisher("cmd_vel_mux/input/teleop", Twist, queue_size=1)
-    laser_sub = rospy.Subscriber("scan", 10, laserCallBack)
+    laser_sub = rospy.Subscriber("scan", LaserScan, laserCallBack)
     while not rospy.is_shutdown():
         vel_pub.publish(msg)
         rate.sleep()
-        print("here")
 
 if __name__ == '__main__':
     main()
