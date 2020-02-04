@@ -34,9 +34,9 @@ public:
                 ROS_INFO("minLaserIdx: %i", minLaserIdx);
                 ROS_INFO("desiredNLasers: %i", desiredNLasers);
                 if(minLaserIdx < nLasers/2){ 
-                    turn(0, 45, vel, vel_pub); //turn right
+                    turn(0, 45); //turn right
                 }else{
-                    turn(1, 45, vel, vel_pub); //turn left
+                    turn(1, 45); //turn left
                 }
             }else{
                 vel.angular.z = 0.0;
@@ -98,7 +98,7 @@ public:
         return angle_rad/ANGULAR_VEL;
     }
 
-    void turn(int dir, int angle_deg, geometry_msgs::Twist vel, ros::Publisher vel_pub){
+    void turn(int dir, int angle_deg){
         turn_start= std::chrono::system_clock::now();
         uint64_t run_time = 0;
         float angle_rad = DEG2RAD(angle_deg);
