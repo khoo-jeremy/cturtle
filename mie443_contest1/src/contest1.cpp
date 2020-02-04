@@ -99,12 +99,10 @@ public:
     }
 
     void turn(int dir, int angle_deg, geometry_msgs::Twist vel, ros::Publisher vel_pub){
-        std::chrono::time_point<std::chrono::system_clock> turn_start;
         turn_start= std::chrono::system_clock::now();
-        uint64_t run_time= 0;
-
-        float angle_rad= DEG2RAD(angle_deg);
-        float turn_vel= ANGULAR_VEL; 
+        uint64_t run_time = 0;
+        float angle_rad = DEG2RAD(angle_deg);
+        float turn_vel = ANGULAR_VEL; 
         if(dir == 0){
             turn_vel = ANGULAR_VEL * -1;
         }
@@ -114,7 +112,7 @@ public:
             vel.linear.x = 0.0;
             vel_pub.publish(vel);
 
-            run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
+            run_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
         }
     }
 
@@ -139,6 +137,7 @@ private:
 
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
+    std::chrono::time_point<std::chrono::system_clock> turn_start;
 };
 
 int main(int argc, char* argv[])
