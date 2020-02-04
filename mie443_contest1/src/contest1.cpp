@@ -162,9 +162,10 @@ class ContestOne {
 public:
     ContestOne(ros::NodeHandle& nh) : m_nh(nh)
     {
-        bumper_sub = m_nh.subscribe<kobuki_msgs::BumperEvent>("mobile_base/events/bumper", 10, &ContestOne::bumperCallback);
-        laser_sub = m_nh.subscribe<sensor_msgs::LaserScan>("scan", 10, &ContestOne::laserCallback);
-        odom_sub = m_nh.subscribe<nav_msgs::Odometry>("odom",1,&ContestOne::odomCallback);
+        bumper_sub = m_nh.subscribe<kobuki_msgs::BumperEvent>("/mobile_base/events/bumper", 10, &ContestOne::bumperCallback, this);
+        laser_sub = m_nh.subscribe<sensor_msgs::LaserScan>("/scan", 10, &ContestOne::laserCallback, this);
+        odom_sub = m_nh.subscribe<nav_msgs::Odometry>("/odom",1,&ContestOne::odomCallback, this);
+        vel_pub = m_nh.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/teleop", 1);
 
         ros::Rate loop_rate(10);
         start = std::chrono::system_clock::now();
