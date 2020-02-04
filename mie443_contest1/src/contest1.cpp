@@ -162,9 +162,9 @@ class ContestOne {
 public:
     ContestOne(ros::NodeHandle& nh) : m_nh(nh)
     {
-        bumper_sub = nh.subscribe("mobile_base/events/bumper", 10, &ContestOne::bumperCallback);
-        laser_sub = nh.subscribe("scan", 10, &ContestOne::laserCallback);
-        odom_sub = nh.subscribe("odom",1,&ContestOne::odomCallback);
+        bumper_sub = m_nh.subscribe("mobile_base/events/bumper", 10, &ContestOne::bumperCallback);
+        laser_sub = m_nh.subscribe("scan", 10, &ContestOne::laserCallback);
+        odom_sub = m_nh.subscribe("odom",1,&ContestOne::odomCallback);
 
         start = std::chrono::system_clock::now();
         while(ros::ok() && secondsElapsed <= 480) {
