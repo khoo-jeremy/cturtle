@@ -29,26 +29,70 @@ public:
         start = std::chrono::system_clock::now();
         while(ros::ok() && secondsElapsed <= 480) {
             ros::spinOnce();
-            
-            if(minLaserDist < 0.6 || minLaserDist == INF){
-                ROS_INFO("minLaserIdx: %i", minLaserIdx);
-                ROS_INFO("desiredNLasers: %i", desiredNLasers);
-                if(minLaserIdx < nLasers/2){ 
-                    turn(0, 45); //turn right
-                }else{
-                    turn(1, 45); //turn left
-                }
-            }else{
-                vel.angular.z = 0.0;
-                vel.linear.x = 0.25;
-                vel_pub.publish(vel);
-            }
-
+            turnAtWall();
             // The last thing to do is to update the timer.
             secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
             loop_rate.sleep();
         }
     }
+
+    void turnAtWall(){
+
+        if(minLaserDist < 0.6 || minLaserDist == INF){
+            // ROS_INFO("minLaserIdx: %i", minLaserIdx);
+            // ROS_INFO("desiredNLasers: %i", desiredNLasers);
+            if(minLaserIdx < nLasers/2){ 
+                turn(1, 45); //turn left
+                turn_right++;
+            }else{
+                turn(0, 45); //turn right
+                turn_left++;
+            }
+        }else{
+            vel.angular.z = 0.0;
+            vel.linear.x = 0.25;
+            vel_pub.publish(vel);
+            turn_right= 0;
+            turn_left= 0;
+        }
+
+        //in a corner
+
+        ROS_INFO("Left turn #: %i   Right turn #: %i", turn_left, turn_right);
+        if(turn_right > 0 && turn_left > 0){
+            turn(1, 360);
+            turn_right= 0;
+            turn_left= 0;
+        }
+    }
+
+    // void checkBumper(){
+    //     if (msg->state == kobuki_msgs::BumperEvent::PRESSED)
+    //     {
+    //         vel.linear.x = 0;
+    //         vel.angular.z = 0;
+    //         vel_pub.publsh(vel);
+    //         std::chrono::time_point<std::chrono::system_clock> back_start;
+    //         back_start= std::chrono::system_clock::now();
+    //         uint64_t run_time = 0;
+            
+    //         while (run_time < 2)
+    //         {
+    //             vel.linear.x = -0.25;
+    //             vel_pub.publsh(vel);
+    //             run_time= td::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()- back_start).count();
+    //         }
+
+    //         if(bumper[0] == 1)
+    //         {
+    //             turn(0, 45, vel, vel_pub); //turn right
+    //         }
+    //         if(bumper[2] = 1)
+    //         {
+    //             turn(1, 45, vel, vel_pub); //turn left
+    //         }
+    //     }
+    // }
 
     void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
     {
@@ -99,6 +143,7 @@ public:
     }
 
     void turn(int dir, int angle_deg){
+        std::chrono::time_point<std::chrono::system_clock> turn_start;
         turn_start= std::chrono::system_clock::now();
         uint64_t run_time = 0;
         float angle_rad = DEG2RAD(angle_deg);
@@ -106,6 +151,8 @@ public:
         if(dir == 0){
             turn_vel = ANGULAR_VEL * -1;
         }
+
+        // ROS_INFO("Turn angle deg: %i  Turn angle rad: %f   Turn time: %f:", angle_deg, angle_rad, time_to_turn(angle_rad));
 
         while(run_time <= time_to_turn(angle_rad)){
             vel.angular.z = turn_vel; 
@@ -130,7 +177,9 @@ private:
     float posX= 0.0, posY = 0.0, yaw = 0.0;
     float minLaserDist = INF;
     int minLaserIdx= 0;
-    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 20;
+    int turn_right= 0;
+    int turn_left= 0;
+    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 10;
     uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED};

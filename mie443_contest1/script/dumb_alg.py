@@ -12,51 +12,51 @@ def	take_action(regions):
     angular_z	=	0
     state_description	=	''
     if	(regions['front'] > min_d and	
-         regions['fleft'] > min_d and	
-         regions['fright'] > min_d):
+         regions['left'] > min_d and	
+         regions['right'] > min_d):
         state_description	=	'case	1	- nothing'
         linear_x	=	0.6
         angular_z	=	0
     elif ((regions['front'] < min_d or np.isnan(regions['front'])) and 
-          regions['fleft'] > min_d and
-          regions['fright'] > min_d):
+          regions['left'] > min_d and
+          regions['right'] > min_d):
         state_description	=	'case	2	- front'
         linear_x	=	0
         angular_z	=	0.3
     elif (regions['front'] > min_d and	
-          regions['fleft'] > min_d and	
-          (regions['fright'] < min_d or np.isnan(regions['fright']))):
-        state_description	=	'case	3	- fright'
+          regions['left'] > min_d and	
+          (regions['right'] < min_d or np.isnan(regions['right']))):
+        state_description	=	'case	3	- right'
         linear_x	=	0
         angular_z	=	0.3
     elif (regions['front'] > min_d and	
-          (regions['fleft'] < min_d or np.isnan(regions['fleft'])) and 
-          regions['fright'] > min_d):
-        state_description	=	'case	4	- fleft'
+          (regions['left'] < min_d or np.isnan(regions['left'])) and 
+          regions['right'] > min_d):
+        state_description	=	'case	4	- left'
         linear_x	=	0
         angular_z	=	-0.3
     elif ((regions['front'] < min_d or np.isnan(regions['front'])) and	
-          regions['fleft'] > min_d and 
-          (regions['fright'] < min_d or np.isnan(regions['fright']))):
-        state_description	=	'case	5	- front	and	fright'
+          regions['left'] > min_d and 
+          (regions['right'] < min_d or np.isnan(regions['right']))):
+        state_description	=	'case	5	- front	and	right'
         linear_x	=	0
         angular_z	=	0.3
     elif ((regions['front'] < min_d or np.isnan(regions['front'])) and	
-          (regions['fleft'] < min_d or np.isnan(regions['fleft'])) and 
-          regions['fright'] > min_d):
-        state_description	=	'case	6	- front	and	fleft'
+          (regions['left'] < min_d or np.isnan(regions['left'])) and 
+          regions['right'] > min_d):
+        state_description	=	'case	6	- front	and	left'
         linear_x	=	0
         angular_z	=	-0.3
     elif ((regions['front'] < min_d or np.isnan(regions['front'])) and	
-          (regions['fleft'] < min_d or np.isnan(regions['fleft'])) and 
-          (regions['fright'] < min_d or np.isnan(regions['fright']))):
-        state_description	=	'case	7	- front	and	fleft	and	fright'
+          (regions['left'] < min_d or np.isnan(regions['left'])) and 
+          (regions['right'] < min_d or np.isnan(regions['right']))):
+        state_description	=	'case	7	- front	and	fleft	and	right'
         linear_x	=	0
         angular_z	=	0.3
     elif (regions['front'] > min_d and	
-          (regions['fleft'] < min_d or np.isnan(regions['fleft'])) and 
-          (regions['fright'] < min_d or np.isnan(regions['fright']))):
-        state_description	=	'case	8	- fleft	and	fright'
+          (regions['left'] < min_d or np.isnan(regions['left'])) and 
+          (regions['right'] < min_d or np.isnan(regions['right']))):
+        state_description	=	'case	8	- left	and	right'
         linear_x	=	0.3
         angular_z	=	0
     else:
