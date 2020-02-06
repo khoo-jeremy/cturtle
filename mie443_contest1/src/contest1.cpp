@@ -29,6 +29,7 @@ public:
         start = std::chrono::system_clock::now();
         while(ros::ok() && secondsElapsed <= 480) {
             ros::spinOnce();
+            // ros::Duration(2).sleep();
             turnAtWall();
             // The last thing to do is to update the timer.
             secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
@@ -37,16 +38,15 @@ public:
     }
 
     void turnAtWall(){
-
         if(minLaserDist < 0.6 || minLaserDist == INF){
             // ROS_INFO("minLaserIdx: %i", minLaserIdx);
             // ROS_INFO("desiredNLasers: %i", desiredNLasers);
             if(minLaserIdx < nLasers/2){ 
-                turn(1, 45); //turn left
-                turn_right++;
-            }else{
-                turn(0, 45); //turn right
+                turn(1, 30); //turn left
                 turn_left++;
+            }else{
+                turn(-1, 30); //turn right
+                turn_right++;
             }
         }else{
             vel.angular.z = 0.0;
@@ -58,9 +58,9 @@ public:
 
         //in a corner
 
-        ROS_INFO("Left turn #: %i   Right turn #: %i", turn_left, turn_right);
+        // ROS_INFO("Left turn #: %i   Right turn #: %i", turn_left, turn_right);
         if(turn_right > 0 && turn_left > 0){
-            turn(1, 360);
+            turn(1, 90);
             turn_right= 0;
             turn_left= 0;
         }
@@ -143,7 +143,7 @@ public:
     }
 
     void turn(int dir, int angle_deg){
-        turn_start= std::chrono::system_clock::now();
+        turn_start = std::chrono::system_clock::now();
         uint64_t run_time= 0;
         float angle_rad= DEG2RAD(angle_deg);
         float turn_vel = ANGULAR_VEL * dir;
@@ -151,11 +151,6 @@ public:
         float last_position = start_angle;
         float turned = 0.0;
 
-        // vel.linear.x = 0.0;
-        // vel_pub.publish(vel);
-        // ros::Duration(0.5).sleep();
-
-        ROS_INFO("dir: %i, start: %f, planned_turn_amount: %f", dir, RAD2DEG(start_angle), RAD2DEG(angle_rad)*dir);
         while(turned < angle_rad && run_time < 15){
             ros::spinOnce();
             // ROS_INFO("yaw: %f, dir: %i", yaw, dir);
@@ -171,6 +166,9 @@ public:
             last_position = yaw;
             run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
         }
+        vel.angular.z = 0.0;
+        vel.linear.x = 0.0;
+        vel_pub.publish(vel);
         ROS_INFO("finish turn, start: %f, end: %f, turned: %f", RAD2DEG(start_angle), RAD2DEG(yaw), RAD2DEG(turned));
     }
 
@@ -182,7 +180,7 @@ private:
     ros::Subscriber odom_sub;
     geometry_msgs::Twist vel;
 
-    const float ANGULAR_VEL= M_PI/6;
+    const float ANGULAR_VEL= M_PI/2;
     float angular = 0.0;
     float linear = 0.0;
     float posX= 0.0, posY = 0.0, yaw = 0.0;
