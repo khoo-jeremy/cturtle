@@ -66,37 +66,37 @@ public:
         }
     }
 
-    // void checkBumper(){
-    //     if (msg->state == kobuki_msgs::BumperEvent::PRESSED)
-    //     {
-    //         vel.linear.x = 0;
-    //         vel.angular.z = 0;
-    //         vel_pub.publsh(vel);
-    //         std::chrono::time_point<std::chrono::system_clock> back_start;
-    //         back_start= std::chrono::system_clock::now();
-    //         uint64_t run_time = 0;
-            
-    //         while (run_time < 2)
-    //         {
-    //             vel.linear.x = -0.25;
-    //             vel_pub.publsh(vel);
-    //             run_time= td::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()- back_start).count();
-    //         }
+    void bumperAdjust(){
+        vel.linear.x = 0;
+        vel.angular.z = 0;
+        vel_pub.publish(vel);
+        std::chrono::time_point<std::chrono::system_clock> back_start;
+        back_start= std::chrono::system_clock::now();
+        uint64_t run_time = 0;
 
-    //         if(bumper[0] == 1)
-    //         {
-    //             turn(0, 45, vel, vel_pub); //turn right
-    //         }
-    //         if(bumper[2] = 1)
-    //         {
-    //             turn(1, 45, vel, vel_pub); //turn left
-    //         }
-    //     }
-    // }
+        // go backwards
+        while (run_time < 1)
+        {
+            vel.linear.x = -0.25;
+            vel_pub.publish(vel);
+            run_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()- back_start).count();
+        }
+
+        if(bumper[0] == kobuki_msgs::BumperEvent::PRESSED) // left bumper hit
+        {
+            turn(-1, 30); //turn right
+        }
+        if(bumper[2] == kobuki_msgs::BumperEvent::PRESSED) // right bumper hit
+        {
+            turn(1, 30); //turn left
+        }
+    }
 
     void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
     {
         bumper[msg->bumper]= msg->state;
+        if (msg->state == kobuki_msgs::BumperEvent::PRESSED)
+            bumperAdjust();
     }
 
     void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
@@ -200,7 +200,7 @@ private:
 
 int main(int argc, char* argv[])
 {
-    ros::init(argc, argv, "image_listener");
+    ros::init(argc, argv, "contest1_node");
     ROS_INFO("Contest 1 node is starting");
     ros::NodeHandle nh;
     ContestOne obj(nh);

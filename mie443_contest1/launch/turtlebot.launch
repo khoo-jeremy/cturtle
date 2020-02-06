@@ -1,4 +1,7 @@
 <launch>
-<include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
-<include file="$(find mie443_contest1)/launch/gmapping.launch"/>
+    <!-- <include file="$(find mie443_contest1)/launch/turtlebot_world.launch"/> -->
+    <include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
+    <include file="$(find mie443_contest1)/launch/gmapping.launch"/>
+    <include file="$(find turtlebot_rviz_launchers)/launch/view_navigation.launch"/>
+    <node pkg="mie443_contest1" type="contest1" name="contest1" output="screen"/>
 </launch>
