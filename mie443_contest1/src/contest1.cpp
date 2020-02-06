@@ -145,22 +145,34 @@ public:
     void turn(int dir, int angle_deg){
         std::chrono::time_point<std::chrono::system_clock> turn_start;
         turn_start= std::chrono::system_clock::now();
-        uint64_t run_time = 0;
-        float angle_rad = DEG2RAD(angle_deg);
-        float turn_vel = ANGULAR_VEL; 
-        if(dir == 0){
-            turn_vel = ANGULAR_VEL * -1;
-        }
+        uint64_t run_time= 0;
+        float angle_rad= DEG2RAD(angle_deg);
+        float turn_vel = ANGULAR_VEL * dir;
+        float start_angle = yaw;
+        float last_position = start_angle;
+        float turned = 0.0;
 
-        // ROS_INFO("Turn angle deg: %i  Turn angle rad: %f   Turn time: %f:", angle_deg, angle_rad, time_to_turn(angle_rad));
+        // vel.linear.x = 0.0;
+        // vel_pub.publish(vel);
+        // ros::Duration(0.5).sleep();
 
-        while(run_time <= time_to_turn(angle_rad)){
-            vel.angular.z = turn_vel; 
+        ROS_INFO("dir: %i, start: %f, planned_turn_amount: %f", dir, RAD2DEG(start_angle), RAD2DEG(angle_rad)*dir);
+        while(turned < angle_rad && run_time < 15){
+            ros::spinOnce();
+            // ROS_INFO("yaw: %f, dir: %i", yaw, dir);
+            // ros::Duration(0.5).sleep();
+            vel.angular.z = turn_vel;
             vel.linear.x = 0.0;
             vel_pub.publish(vel);
-
-            run_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
+            if ((yaw - last_position + dir)*dir >= 0){
+                turned += std::abs(yaw - last_position);
+            }else{
+                turned += std::abs(2*M_PI*dir + yaw - last_position);
+            }
+            last_position = yaw;
+            run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
         }
+        ROS_INFO("finish turn, start: %f, end: %f, turned: %f", RAD2DEG(start_angle), RAD2DEG(yaw), RAD2DEG(turned));
     }
 
 private:
@@ -171,7 +183,7 @@ private:
     ros::Subscriber odom_sub;
     geometry_msgs::Twist vel;
 
-    const float ANGULAR_VEL= 0.5;
+    const float ANGULAR_VEL= M_PI/6;
     float angular = 0.0;
     float linear = 0.0;
     float posX= 0.0, posY = 0.0, yaw = 0.0;
