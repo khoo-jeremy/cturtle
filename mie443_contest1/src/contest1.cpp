@@ -27,13 +27,29 @@ public:
 
         ros::Rate loop_rate(10);
         start = std::chrono::system_clock::now();
+
         while(ros::ok() && secondsElapsed <= 480) {
             ros::spinOnce();
-            turnAtWall();
+    
+            ROS_INFO("seconds elapsed: %i", secondsElapsed);
+            if(secondsElapsed % 45 == 0){
+                map_surroundings();
+            }else{
+                turnAtWall();
+            }
+
             // The last thing to do is to update the timer.
             secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
             loop_rate.sleep();
         }
+    }
+
+    void map_surroundings(){
+        ROS_INFO("Mapping");
+        vel.angular.z = 0.0;
+        vel.linear.x = 0.0;
+        vel_pub.publish(vel);
+        turn(1, 360);
     }
 
     void turnAtWall(){
@@ -43,27 +59,50 @@ public:
             // ROS_INFO("desiredNLasers: %i", desiredNLasers);
             if(minLaserIdx < nLasers/2){ 
                 turn(1, 45); //turn left
-                turn_right++;
-            }else{
-                turn(0, 45); //turn right
                 turn_left++;
+            }else{
+                turn(-1, 45); //turn right
+                turn_right++;
             }
         }else{
-            vel.angular.z = 0.0;
-            vel.linear.x = 0.25;
-            vel_pub.publish(vel);
+            moveForward();
             turn_right= 0;
             turn_left= 0;
         }
 
         //in a corner
-
-        ROS_INFO("Left turn #: %i   Right turn #: %i", turn_left, turn_right);
+        // ROS_INFO("Left turn #: %i   Right turn #: %i", turn_left, turn_right);
         if(turn_right > 0 && turn_left > 0){
-            turn(1, 360);
+            turn(1, 180);
             turn_right= 0;
             turn_left= 0;
         }
+    }
+
+    void moveForward(){
+        vel.angular.z = 0.0;
+        vel.linear.x = FORWARD_VEL;
+        vel_pub.publish(vel);
+    }
+
+    void moveForwardDist(float dist){
+        float startX= posX;
+        float startY= posY;
+        float moved= 0;
+        while(moved < dist){
+            moveForward();
+            ros::spinOnce();
+            moved= calculateDist(startX, startY, posX, posY);
+            // ROS_INFO("Moved distance: %f", moved);
+        }
+
+    }    
+
+    float calculateDist(float posX_s, float posY_s, float posX_f, float posY_f){
+        float distX, distY;
+        distX= posX_f - posX_s;
+        distY= posY_f - posY_s;
+        return sqrt(distX * distX + distY * distY);
     }
 
     // void checkBumper(){
@@ -106,6 +145,9 @@ public:
         // ROS_INFO("Size of laser scan array: %i and size of offset: %i", nLasers, desiredNLasers);
         minLaserDist = INF;
         
+        right_most_dist= msg->ranges[0];
+        left_most_dist= msg->ranges[nLasers];
+
         if(desiredAngle * M_PI/180 < msg->angle_max && -desiredAngle * M_PI/180>msg->angle_min)
         {
             for(uint32_t laser_idx= nLasers/2-desiredNLasers; laser_idx < nLasers/2 + desiredNLasers; ++laser_idx)
@@ -142,8 +184,8 @@ public:
         return angle_rad/ANGULAR_VEL;
     }
 
+    // 1= left, -1= right
     void turn(int dir, int angle_deg){
-        std::chrono::time_point<std::chrono::system_clock> turn_start;
         turn_start= std::chrono::system_clock::now();
         uint64_t run_time= 0;
         float angle_rad= DEG2RAD(angle_deg);
@@ -156,8 +198,8 @@ public:
         // vel_pub.publish(vel);
         // ros::Duration(0.5).sleep();
 
-        ROS_INFO("dir: %i, start: %f, planned_turn_amount: %f", dir, RAD2DEG(start_angle), RAD2DEG(angle_rad)*dir);
-        while(turned < angle_rad && run_time < 15){
+        // ROS_INFO("dir: %i, start: %f, planned_turn_amount: %f", dir, RAD2DEG(start_angle), RAD2DEG(angle_rad)*dir);
+        while(turned < angle_rad){
             ros::spinOnce();
             // ROS_INFO("yaw: %f, dir: %i", yaw, dir);
             // ros::Duration(0.5).sleep();
@@ -172,7 +214,7 @@ public:
             last_position = yaw;
             run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
         }
-        ROS_INFO("finish turn, start: %f, end: %f, turned: %f", RAD2DEG(start_angle), RAD2DEG(yaw), RAD2DEG(turned));
+        // ROS_INFO("finish turn, start: %f, end: %f, turned: %f", RAD2DEG(start_angle), RAD2DEG(yaw), RAD2DEG(turned));
     }
 
 private:
@@ -183,7 +225,9 @@ private:
     ros::Subscriber odom_sub;
     geometry_msgs::Twist vel;
 
-    const float ANGULAR_VEL= M_PI/6;
+    // const float ANGULAR_VEL= M_PI/6;
+    const float ANGULAR_VEL= M_PI/2;
+    const float FORWARD_VEL= 0.25;
     float angular = 0.0;
     float linear = 0.0;
     float posX= 0.0, posY = 0.0, yaw = 0.0;
@@ -191,7 +235,7 @@ private:
     int minLaserIdx= 0;
     int turn_right= 0;
     int turn_left= 0;
-    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 10;
+    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 10; // desiredAngle * 2 = field of view
     uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED};
