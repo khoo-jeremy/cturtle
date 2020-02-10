@@ -214,6 +214,39 @@ public:
         yaw = tf::getYaw(msg->pose.pose.orientation);
         tf::getYaw(msg->pose.pose.orientation);
         // ROS_INFO("Position: (%f, %f) Orientation: %f rad or %f degrees", posX, posY, yaw, RAD2DEG(yaw));
+
+        if (wall_follow_start_pos[0] == -1)
+        {
+            if (state_ == 1)
+            {
+                ROS_INFO("BEGINNING WALL FOLLOWER");
+                wall_follow_start_pos[0] = posX;
+                wall_follow_start_pos[1] = posY;
+            }
+        }
+        else
+        {
+            float start_x = wall_follow_start_pos[0];
+            float start_y = wall_follow_start_pos[1];
+            
+            if (!robot_left_initial_area)
+            {
+                if (!((start_x - 0.8 <= posX && posX <= start_x + 0.8) &&
+                      (start_y - 0.8 <= posY && posY <= start_y + 0.8)))
+                    robot_left_initial_area = true;
+            }
+            else
+            {
+                if ((start_x - 0.6 <= posX && posX <= start_x + 0.6) &&
+                    (start_y - 0.6 <= posY && posY <= start_y + 0.6))
+                {
+                    robot_left_initial_area = false;
+                    wall_follow_start_pos[0] = -1;
+                    wall_follow_start_pos[1] = -1;
+                    ROS_INFO("LOOPED AROUND THE WALL OBSTACLE");
+                }
+            }
+        }
     }
 
     float time_to_turn(float angle_rad){
@@ -356,11 +389,13 @@ private:
     float regions[3];
     int state_; // 0 = find wall, 1 = turn left, 2 = follow wall
     int state;
-
     
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
     std::chrono::time_point<std::chrono::system_clock> turn_start;
+
+    float wall_follow_start_pos[2] = {-1, -1};
+    bool robot_left_initial_area = false;
 };
 
 int main(int argc, char* argv[])
