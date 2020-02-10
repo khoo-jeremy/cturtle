@@ -25,18 +25,19 @@ public:
         odom_sub = m_nh.subscribe<nav_msgs::Odometry>("/odom",1,&ContestOne::odomCallback, this);
         vel_pub = m_nh.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/teleop", 1);
 
-        ros::Rate loop_rate(10);
+        ros::Rate loop_rate(20);
         start = std::chrono::system_clock::now();
 
         while(ros::ok() && secondsElapsed <= 480) {
             ros::spinOnce();
     
-            ROS_INFO("seconds elapsed: %i", secondsElapsed);
-            if(secondsElapsed % 45 == 0){
-                map_surroundings();
-            }else{
-                turnAtWall();
-            }
+            // ROS_INFO("seconds elapsed: %i", secondsElapsed);
+            // if(secondsElapsed % 45 == 0){
+            //     map_surroundings();
+            // }else{
+            //     turnAtWall();
+            // }
+            wallFollow();
 
             // The last thing to do is to update the timer.
             secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
@@ -58,24 +59,24 @@ public:
             // ROS_INFO("desiredNLasers: %i", desiredNLasers);
             if(minLaserIdx < nLasers/2){ 
                 turn(1, 30); //turn left
-                turn_left++;
+                left_turns++;
             }else{
                 turn(-1, 30); //turn right
-                turn_right++;
+                right_turns++;
             }
         }else{
             moveForward();
-            turn_right= 0;
-            turn_left= 0;
+            right_turns= 0;
+            left_turns= 0;
         }
 
         //in a corner
 
-        // ROS_INFO("Left turn #: %i   Right turn #: %i", turn_left, turn_right);
-        if(turn_right > 0 && turn_left > 0){
+        // ROS_INFO("Left turn #: %i   Right turn #: %i", left_turns, right_turns);
+        if(right_turns > 0 && left_turns > 0){
             turn(1, 90);
-            turn_right= 0;
-            turn_left= 0;
+            right_turns= 0;
+            left_turns= 0;
         }
     }
 
@@ -181,6 +182,26 @@ public:
             }
         }
         // ROS_INFO("Minimum distance from object: %f", minLaserDist);
+
+        // ROS_INFO(len(msg.ranges)); 
+        regions_[0] = msg->ranges[0];
+        regions_[1] = msg->ranges[213];
+        regions_[2] = msg->ranges[426];
+        for(int i = 0; i <= 213; i++){
+            if(msg->ranges[i] < regions_[0])
+                regions_[0] = msg->ranges[i];
+        }
+        for(int i = 213; i <= 426; i++){
+            if(msg->ranges[i] < regions_[1])
+                regions_[1] = msg->ranges[i];
+        }
+        for(int i = 426; i <= 641; i++){
+            if(msg->ranges[i] < regions_[2])
+                regions_[2] = msg->ranges[i];
+        }
+
+        // ROS_INFO("Right Region: %i. Front Region: %i. Left Region %i", regions[0], regions[1], regions[2]);
+        take_action();
     }
 
     void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
@@ -227,6 +248,74 @@ public:
         vel_pub.publish(vel);
         // ROS_INFO("finish turn, start: %f, end: %f, turned: %f", RAD2DEG(start_angle), RAD2DEG(yaw), RAD2DEG(turned));
     }
+        
+    void change_state(int state){
+        if (state != state_){
+        // ROS_INFO("Wall follower - [%s] - %s", % (state, state_dict_[state]));
+            state_ = state;
+        }
+    }
+
+    void take_action(){
+        regions[0] = regions_[0];
+        regions[1] = regions_[1];
+        regions[2] = regions_[2];
+        // geometry_msg::Twist msg;
+        
+        float d = 0.7;
+        
+        if (regions[1] > d && regions[2] > d && regions[0] > d)
+            change_state(0);
+        else if ((regions[1] < d || std::isnan(regions[1])) && regions[2] > d && regions[0] > d)
+            change_state(1);
+        else if (regions[1] > d && regions[2] > d && (regions[0] < d || std::isnan(regions[0])))
+            change_state(2);
+        else if (regions[1] > d && (regions[2] < d || std::isnan(regions[2])) && regions[0] > d)
+            change_state(0);
+        else if ((regions[1] < d || std::isnan(regions[1])) && regions[2] > d && (regions[0] < d || std::isnan(regions[0])))
+            change_state(1);
+        else if ((regions[1] < d || std::isnan(regions[1])) && (regions[2] < d || std::isnan(regions[2])) && regions[0] > d)
+            change_state(1);
+        else if ((regions[1] < d || std::isnan(regions[1])) && (regions[2] < d || std::isnan(regions[2])) && (regions[0] < d || std::isnan(regions[0])))
+            change_state(1);
+        else if (regions[1] > d && (regions[2] < d || std::isnan(regions[2])) && (regions[0] < d || std::isnan(regions[0])))
+            change_state(0);
+        else
+            ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[1], regions[2], regions[3]);
+    }
+        
+    geometry_msgs::Twist find_wall(){
+        geometry_msgs::Twist msg;
+        msg.linear.x = 0.1;
+        msg.angular.z = -0.3;
+        return msg;
+    }
+    
+    geometry_msgs::Twist turn_left(){
+        geometry_msgs::Twist msg;
+        msg.angular.z = 0.3;
+        return msg;
+    }
+    
+    geometry_msgs::Twist follow_the_wall(){
+        geometry_msgs::Twist msg;
+        msg.linear.x = 0.5;
+        return msg;
+    }
+
+    void wallFollow(){
+        geometry_msgs::Twist msg;
+        if (state_ == 0)
+            msg = find_wall();
+        else if (state_ == 1)
+            msg = turn_left();
+        else if (state_ == 2)
+            msg = follow_the_wall();
+        else
+            ROS_INFO("Unknown state!");
+        
+        vel_pub.publish(msg);
+    }
 
 private:
     ros::NodeHandle m_nh;
@@ -244,13 +333,19 @@ private:
     float posX= 0.0, posY = 0.0, yaw = 0.0;
     float minLaserDist = INF;
     int minLaserIdx= 0;
-    int turn_right= 0;
-    int turn_left= 0;
-    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 10; // desiredAngle * 2 = field of view
+    int right_turns= 0;
+    int left_turns= 0;
+    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 60; // desiredAngle * 2 = field of view
     uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED};
 
+    float regions_[3]; // 0 = right side, 1 = front, 2 = left side
+    float regions[3];
+    int state_; // 0 = find wall, 1 = turn left, 2 = follow wall
+    int state;
+
+    
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
     std::chrono::time_point<std::chrono::system_clock> turn_start;
