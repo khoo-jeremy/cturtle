@@ -39,6 +39,7 @@ public:
             // }
             wallFollow();
 
+
             // The last thing to do is to update the timer.
             secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
             loop_rate.sleep();
@@ -187,18 +188,20 @@ public:
         regions_[0] = msg->ranges[0];
         regions_[1] = msg->ranges[213];
         regions_[2] = msg->ranges[426];
-        for(int i = 0; i <= 213; i++){
+        for(int i = 0; i < 213; i++){
             if(msg->ranges[i] < regions_[0])
                 regions_[0] = msg->ranges[i];
         }
-        for(int i = 213; i <= 426; i++){
-            if(msg->ranges[i] < regions_[1])
+        for(int i = 213; i < 426; i++){
+            if(msg->ranges[i] < regions_[1] && msg->ranges[i] != 0)
                 regions_[1] = msg->ranges[i];
         }
-        for(int i = 426; i <= 641; i++){
-            if(msg->ranges[i] < regions_[2])
+        for(int i = 426; i < 639; i++){
+            if(msg->ranges[i] < regions_[2] && msg->ranges[i] != 0)
                 regions_[2] = msg->ranges[i];
         }
+
+        // ROS_INFO("%i", (msg->ranges).size());
 
         // ROS_INFO("Right Region: %i. Front Region: %i. Left Region %i", regions[0], regions[1], regions[2]);
         take_action();
@@ -257,13 +260,15 @@ public:
     }
 
     void take_action(){
-        regions[0] = regions_[0];
-        regions[1] = regions_[1];
-        regions[2] = regions_[2];
+        regions[0] = regions_[0]; //right
+        regions[1] = regions_[1]; //front
+        regions[2] = regions_[2]; //left
         // geometry_msg::Twist msg;
         
-        float d = 0.7;
+        float d = 0.6;
         
+        ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
+
         if (regions[1] > d && regions[2] > d && regions[0] > d)
             change_state(0);
         else if ((regions[1] < d || std::isnan(regions[1])) && regions[2] > d && regions[0] > d)
@@ -299,20 +304,27 @@ public:
     
     geometry_msgs::Twist follow_the_wall(){
         geometry_msgs::Twist msg;
-        msg.linear.x = 0.5;
+        msg.linear.x = FORWARD_VEL;
         return msg;
     }
 
     void wallFollow(){
         geometry_msgs::Twist msg;
-        if (state_ == 0)
+        if (state_ == 0){
             msg = find_wall();
-        else if (state_ == 1)
+            ROS_INFO("Finding wall");
+        }
+        else if (state_ == 1){
             msg = turn_left();
-        else if (state_ == 2)
+            ROS_INFO("Turn left");
+        }
+        else if (state_ == 2){
             msg = follow_the_wall();
-        else
+            ROS_INFO("Follow the wall");
+        }
+        else{
             ROS_INFO("Unknown state!");
+        }
         
         vel_pub.publish(msg);
     }
