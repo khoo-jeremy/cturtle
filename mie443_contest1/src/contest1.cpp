@@ -224,31 +224,38 @@ public:
 
         if (strat == 1)
         {
-            strat_current_time= std::chrono::system_clock::now();
-            int diff= std::chrono::duration_cast<std::chrono::seconds>(strat_current_time - strat_prev_time).count();
-            if (diff >= 20 || strat_prev_time == 0){
+            strat_current_time = std::chrono::system_clock::now();
+            int diff = std::chrono::duration_cast<std::chrono::seconds>(strat_current_time - strat_prev_time).count();
+            if (diff >= 20){
                 loop_points.push_back(std::pair<float, float>( posX, posY ));
                 strat_prev_time = strat_current_time;
+                robot_left_initial_area = false;
+                ROS_INFO("Collected point at %f, %f", posX, posY);
+
             }
             float start_x = wall_follow_start_pos[0];
             float start_y = wall_follow_start_pos[1];
             
-            if (!robot_left_initial_area)
+            if (!loop_points.empty())
             {
-                if (!((loop_points.back().first - 0.8 <= posX && posX <= loop_points.back().first + 0.8) &&
-                        (loop_points.back().second - 0.8 <= posY && posY <= loop_points.back().second + 0.8)))
-                    robot_left_initial_area = true;
-            }
-            else
-            {
-                for (std::pair<float, float> p : loop_points){
-                    if ((p.first - 0.6 <= posX && posX <= p.first + 0.6) &&
-                        (p.second - 0.6 <= posY && posY <= p.second + 0.6))
-                    {
-                        robot_left_initial_area = false;
-                        loop_points.clear();
-                        strat_prev_time = 0;
-                        ROS_INFO("LOOPED AROUND THE WALL OBSTACLE");
+                if (!robot_left_initial_area)
+                {
+                    auto last_point = loop_points.back();
+                    if (!((last_point.first - 0.8 <= posX && posX <= last_point.first + 0.8) &&
+                            (last_point.second - 0.8 <= posY && posY <= last_point.second + 0.8)))
+                        robot_left_initial_area = true;
+                }
+                else
+                {
+                    for (std::pair<float, float> p : loop_points){
+                        if ((p.first - 0.6 <= posX && posX <= p.first + 0.6) &&
+                            (p.second - 0.6 <= posY && posY <= p.second + 0.6))
+                        {
+                            robot_left_initial_area = false;
+                            loop_points.clear();
+                            ROS_INFO("LOOPED AROUND THE WALL OBSTACLE");
+                            strat = 0;
+                        }
                     }
                 }
             }
@@ -306,7 +313,7 @@ public:
         
         float d = 0.8;
         
-        ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
+        // ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
 
         if (regions[1] > d && regions[2] > d && regions[0] > d)
             change_state(0);
@@ -351,18 +358,18 @@ public:
         geometry_msgs::Twist msg;
         if (state_ == 0){
             msg = find_wall();
-            ROS_INFO("Finding wall");
+            // ROS_INFO("Finding wall");
         }
         else if (state_ == 1){
             msg = turn_left();
-            ROS_INFO("Turn left");
+            // ROS_INFO("Turn left");
         }
         else if (state_ == 2){
             msg = follow_the_wall();
-            ROS_INFO("Follow the wall");
+            // ROS_INFO("Follow the wall");
         }
         else{
-            ROS_INFO("Unknown state!");
+            // ROS_INFO("Unknown state!");
         }
         
         vel_pub.publish(msg);
@@ -386,7 +393,7 @@ private:
     int minLaserIdx= 0;
     int right_turns= 0;
     int left_turns= 0;
-    int strat = 0;
+    int strat = 1;
     std::vector<std::pair<float, float>> loop_points; 
     int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 10; // desiredAngle * 2 = field of view
     uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, 
@@ -402,7 +409,7 @@ private:
     uint64_t secondsElapsed = 0;
     std::chrono::time_point<std::chrono::system_clock> turn_start;
     std::chrono::time_point<std::chrono::system_clock> strat_current_time;
-    std::chrono::time_point<std::chrono::system_clock> strat_prev_time = 0;
+    std::chrono::time_point<std::chrono::system_clock> strat_prev_time = std::chrono::system_clock::now();
 
     float wall_follow_start_pos[2] = {-1, -1};
     bool robot_left_initial_area = false;
