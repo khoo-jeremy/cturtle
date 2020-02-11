@@ -222,35 +222,38 @@ public:
         tf::getYaw(msg->pose.pose.orientation);
         // ROS_INFO("Position: (%f, %f) Orientation: %f rad or %f degrees", posX, posY, yaw, RAD2DEG(yaw));
 
-        if (wall_follow_start_pos[0] == -1)
+        if (strat == 1)
         {
-            if (state_ == 1)
+            if (wall_follow_start_pos[0] == -1)
             {
-                ROS_INFO("BEGINNING WALL FOLLOWER");
-                wall_follow_start_pos[0] = posX;
-                wall_follow_start_pos[1] = posY;
-            }
-        }
-        else
-        {
-            float start_x = wall_follow_start_pos[0];
-            float start_y = wall_follow_start_pos[1];
-            
-            if (!robot_left_initial_area)
-            {
-                if (!((start_x - 0.8 <= posX && posX <= start_x + 0.8) &&
-                      (start_y - 0.8 <= posY && posY <= start_y + 0.8)))
-                    robot_left_initial_area = true;
+                if (state_ == 1)
+                {
+                    ROS_INFO("BEGINNING WALL FOLLOWER");
+                    wall_follow_start_pos[0] = posX;
+                    wall_follow_start_pos[1] = posY;
+                }
             }
             else
             {
-                if ((start_x - 0.6 <= posX && posX <= start_x + 0.6) &&
-                    (start_y - 0.6 <= posY && posY <= start_y + 0.6))
+                float start_x = wall_follow_start_pos[0];
+                float start_y = wall_follow_start_pos[1];
+                
+                if (!robot_left_initial_area)
                 {
-                    robot_left_initial_area = false;
-                    wall_follow_start_pos[0] = -1;
-                    wall_follow_start_pos[1] = -1;
-                    ROS_INFO("LOOPED AROUND THE WALL OBSTACLE");
+                    if (!((start_x - 0.8 <= posX && posX <= start_x + 0.8) &&
+                          (start_y - 0.8 <= posY && posY <= start_y + 0.8)))
+                        robot_left_initial_area = true;
+                }
+                else
+                {
+                    if ((start_x - 0.6 <= posX && posX <= start_x + 0.6) &&
+                        (start_y - 0.6 <= posY && posY <= start_y + 0.6))
+                    {
+                        robot_left_initial_area = false;
+                        wall_follow_start_pos[0] = -1;
+                        wall_follow_start_pos[1] = -1;
+                        ROS_INFO("LOOPED AROUND THE WALL OBSTACLE");
+                    }
                 }
             }
         }
