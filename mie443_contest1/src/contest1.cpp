@@ -25,20 +25,26 @@ public:
         odom_sub = m_nh.subscribe<nav_msgs::Odometry>("/odom",1,&ContestOne::odomCallback, this);
         vel_pub = m_nh.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/teleop", 1);
 
-        ros::Rate loop_rate(20);
+        ros::Rate loop_rate(10);
         start = std::chrono::system_clock::now();
 
         while(ros::ok() && secondsElapsed <= 480) {
             ros::spinOnce();
-    
+            if (secondsElapsed == 180){
+                strat = 1;
+            }
             // ROS_INFO("seconds elapsed: %i", secondsElapsed);
-            // if(secondsElapsed % 45 == 0){
-            //     map_surroundings();
-            // }else{
-            //     turnAtWall();
-            // }
-            wallFollow();
+            if (strat == 0){
+                if(secondsElapsed % 45 == 0){
+                    map_surroundings();
+                }else{
+                    turnAtWall();
+                }
+            } else {
+                wallFollow();
+            }
 
+            // turn(-1, 30);
 
             // The last thing to do is to update the timer.
             secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
@@ -146,6 +152,7 @@ public:
         {
             turn(1, 30); //turn left
         }
+        ROS_INFO("Bumper 0: %i  Bumper 2: %i", bumper0, bumper2);
     }
 
     void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
@@ -185,19 +192,19 @@ public:
         // ROS_INFO("Minimum distance from object: %f", minLaserDist);
 
         // ROS_INFO(len(msg.ranges)); 
-        regions_[0] = msg->ranges[0];
-        regions_[1] = msg->ranges[213];
-        regions_[2] = msg->ranges[426];
-        for(int i = 0; i < 213; i++){
+        regions_[0] = INF;
+        regions_[1] = INF;
+        regions_[2] = INF;
+        for(int i = 1; i < 213; i++){
             if(msg->ranges[i] < regions_[0])
                 regions_[0] = msg->ranges[i];
         }
         for(int i = 213; i < 426; i++){
-            if(msg->ranges[i] < regions_[1] && msg->ranges[i] != 0)
+            if(msg->ranges[i] < regions_[1])
                 regions_[1] = msg->ranges[i];
         }
-        for(int i = 426; i < 639; i++){
-            if(msg->ranges[i] < regions_[2] && msg->ranges[i] != 0)
+        for(int i = 426; i <= 638; i++){
+            if(msg->ranges[i] < regions_[2])
                 regions_[2] = msg->ranges[i];
         }
 
@@ -298,25 +305,25 @@ public:
         regions[2] = regions_[2]; //left
         // geometry_msg::Twist msg;
         
-        float d = 0.6;
+        float d = 0.8;
         
         ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
 
         if (regions[1] > d && regions[2] > d && regions[0] > d)
             change_state(0);
-        else if ((regions[1] < d || std::isnan(regions[1])) && regions[2] > d && regions[0] > d)
+        else if ((regions[1] < d || regions[1] == INF) && regions[2] > d && regions[0] > d)
             change_state(1);
-        else if (regions[1] > d && regions[2] > d && (regions[0] < d || std::isnan(regions[0])))
+        else if (regions[1] > d && regions[2] > d && (regions[0] < d || regions[0] == INF))
             change_state(2);
-        else if (regions[1] > d && (regions[2] < d || std::isnan(regions[2])) && regions[0] > d)
+        else if (regions[1] > d && (regions[2] < d || regions[2] == INF) && regions[0] > d)
             change_state(0);
-        else if ((regions[1] < d || std::isnan(regions[1])) && regions[2] > d && (regions[0] < d || std::isnan(regions[0])))
+        else if ((regions[1] < d || regions[1] == INF) && regions[2] > d && (regions[0] < d || regions[0] == INF))
             change_state(1);
-        else if ((regions[1] < d || std::isnan(regions[1])) && (regions[2] < d || std::isnan(regions[2])) && regions[0] > d)
+        else if ((regions[1] < d || regions[1] == INF) && (regions[2] < d || regions[2] == INF) && regions[0] > d)
             change_state(1);
-        else if ((regions[1] < d || std::isnan(regions[1])) && (regions[2] < d || std::isnan(regions[2])) && (regions[0] < d || std::isnan(regions[0])))
+        else if ((regions[1] < d || regions[1] == INF) && (regions[2] < d || regions[2] == INF) && (regions[0] < d || regions[0] == INF))
             change_state(1);
-        else if (regions[1] > d && (regions[2] < d || std::isnan(regions[2])) && (regions[0] < d || std::isnan(regions[0])))
+        else if (regions[1] > d && (regions[2] < d || regions[2] == INF) && (regions[0] < d || regions[0] == INF))
             change_state(0);
         else
             ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[1], regions[2], regions[3]);
@@ -324,7 +331,7 @@ public:
         
     geometry_msgs::Twist find_wall(){
         geometry_msgs::Twist msg;
-        msg.linear.x = 0.1;
+        msg.linear.x = 0.2;
         msg.angular.z = -0.3;
         return msg;
     }
@@ -380,7 +387,8 @@ private:
     int minLaserIdx= 0;
     int right_turns= 0;
     int left_turns= 0;
-    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 60; // desiredAngle * 2 = field of view
+    int strat = 0;
+    int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 10; // desiredAngle * 2 = field of view
     uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED, 
                         kobuki_msgs::BumperEvent::RELEASED};
