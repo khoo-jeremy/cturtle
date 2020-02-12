@@ -32,6 +32,7 @@ public:
             ros::spinOnce();
             if (secondsElapsed == init_random_duration){
                 // chnage from random exploration algorithm to wall follow algorithm
+                ROS_INFO("Switching to wall follow algorithm");
                 strat = 1;
             }
             // ROS_INFO("seconds elapsed: %i", secondsElapsed);
@@ -43,6 +44,11 @@ public:
 
             if (strat == 0){
                 turnAtWall();
+                if (secondsElapsed > init_random_duration && secondsElapsed - wall_follow_stopped_time >= 20)
+                {
+                    ROS_INFO("Switching back to wall follow algorithm");
+                    strat = 1;
+                }
             } else {
                 wallFollow();
             }
@@ -257,7 +263,9 @@ public:
                             robot_left_initial_area = false;
                             loop_points.clear();
                             ROS_INFO("LOOPED AROUND THE WALL OBSTACLE");
+                            ROS_INFO("Switching to random algorithm");
                             strat = 0;
+                            wall_follow_stopped_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start).count();
                         }
                     }
                 }
@@ -293,7 +301,7 @@ public:
                 turned += std::abs(2*M_PI*dir + yaw - last_position);
             }
             last_position = yaw;
-            run_time= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
+            run_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-turn_start).count();
         }
         vel.angular.z = 0.0;
         vel.linear.x = 0.0;
@@ -410,6 +418,7 @@ private:
     
     int contest_duration = 480;
     int init_random_duration = 10;
+    uint64_t wall_follow_stopped_time = 0;
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
     std::chrono::time_point<std::chrono::system_clock> turn_start;
