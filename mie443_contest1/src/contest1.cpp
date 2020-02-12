@@ -443,8 +443,8 @@ private:
     int state;
     
     int contest_duration = 480;
-    int init_random_duration = 10;
-    int alg_swap_interval = 10;
+    int init_random_duration = 240;
+    int alg_swap_interval = 60;
     uint64_t wall_follow_stopped_time = 0;
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
