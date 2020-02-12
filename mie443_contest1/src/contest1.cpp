@@ -44,7 +44,7 @@ public:
 
             if (strat == 0){
                 turnAtWall();
-                if (secondsElapsed > init_random_duration && secondsElapsed - wall_follow_stopped_time >= 60)
+                if (secondsElapsed > init_random_duration && secondsElapsed - wall_follow_stopped_time >= alg_swap_interval)
                 {
                     ROS_INFO("Switching back to wall follow algorithm");
                     strat = 1;
@@ -326,38 +326,48 @@ public:
         
         // ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
 
-        if ((regions[1] > d && regions[1] != INF) &&
-            (regions[2] > d && regions[2] != INF) &&
-            (regions[0] > d && regions[0] != INF))
-            change_state(0);
-        else if ((regions[1] < d || regions[1] == INF) && 
-                 (regions[2] > d && regions[2] != INF) &&
-                 (regions[0] > d && regions[0] != INF))
-            change_state(1);
-        else if ((regions[1] > d && regions[1] != INF) &&
-                 (regions[2] > d && regions[2] != INF) &&
-                 (regions[0] < d || regions[0] == INF))
-            change_state(2);
-        else if ((regions[1] > d && regions[1] != INF) && 
-                 (regions[2] < d || regions[2] == INF) &&
-                 (regions[0] > d && regions[0] != INF))
-            change_state(0);
-        else if ((regions[1] < d || regions[1] == INF) && 
-                    regions[2] > d && 
-                 (regions[0] < d || regions[0] == INF))
-            change_state(1);
-        else if ((regions[1] < d || regions[1] == INF) && 
-                 (regions[2] < d || regions[2] == INF) &&
-                 (regions[0] > d && regions[0] != INF))
-            change_state(1);
-        else if ((regions[1] < d || regions[1] == INF) && 
-                 (regions[2] < d || regions[2] == INF) && 
-                 (regions[0] < d || regions[0] == INF))
-            change_state(1);
-        else if ((regions[1] > d && regions[1] != INF) && 
-                 (regions[2] < d || regions[2] == INF) && 
-                 (regions[0] < d || regions[0] == INF))
-            change_state(0);
+        // if ((regions[1] > d && regions[1] != INF) &&
+        //     (regions[2] > d && regions[2] != INF) &&
+        //     (regions[0] > d && regions[0] != INF))
+        //     change_state(0);
+        // else if ((regions[1] < d || regions[1] == INF) && 
+        //          (regions[2] > d && regions[2] != INF) &&
+        //          (regions[0] > d && regions[0] != INF))
+        //     change_state(1);
+        // else if ((regions[1] > d && regions[1] != INF) &&
+        //          (regions[2] > d && regions[2] != INF) &&
+        //          (regions[0] < d || regions[0] == INF))
+        //     change_state(2);
+        // else if ((regions[1] > d && regions[1] != INF) && 
+        //          (regions[2] < d || regions[2] == INF) &&
+        //          (regions[0] > d && regions[0] != INF))
+        //     change_state(0);
+        // else if ((regions[1] < d || regions[1] == INF) && 
+        //          (regions[2] < d || regions[2] == INF) && 
+        //          (regions[0] < d || regions[0] == INF))
+        //     change_state(1);
+        // else if ((regions[1] < d || regions[1] == INF) && 
+        //          (regions[2] < d || regions[2] == INF) &&
+        //          (regions[0] > d && regions[0] != INF))
+        //     change_state(1);
+        // else if ((regions[1] < d || regions[1] == INF) && 
+        //          (regions[2] < d || regions[2] == INF) && 
+        //          (regions[0] < d || regions[0] == INF))
+        //     change_state(1);
+        // else if ((regions[1] > d && regions[1] != INF) && 
+        //          (regions[2] < d || regions[2] == INF) && 
+        //          (regions[0] < d || regions[0] == INF))
+        //     change_state(0);
+        // else
+        //     ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[1], regions[2], regions[3]);
+
+
+        if (regions[1] < d || regions[1] == INF)                                                    // something is in front
+            change_state(1); // turn left
+        else if ((regions[1] > d && regions[1] != INF) && (regions[0] > d && regions[0] != INF))    // nothing in the right or front
+            change_state(0); // curl right
+        else if ((regions[1] > d && regions[1] != INF) && (regions[0] < d || regions[0] == INF))    // something in the right, nothing in the front
+            change_state(2); // go straight
         else
             ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[1], regions[2], regions[3]);
     }
@@ -433,7 +443,8 @@ private:
     int state;
     
     int contest_duration = 480;
-    int init_random_duration = 240;
+    int init_random_duration = 10;
+    int alg_swap_interval = 10;
     uint64_t wall_follow_stopped_time = 0;
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
