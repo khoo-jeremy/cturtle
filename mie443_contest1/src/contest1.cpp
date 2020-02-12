@@ -44,7 +44,7 @@ public:
 
             if (strat == 0){
                 turnAtWall();
-                if (secondsElapsed > init_random_duration && secondsElapsed - wall_follow_stopped_time >= 20)
+                if (secondsElapsed > init_random_duration && secondsElapsed - wall_follow_stopped_time >= 60)
                 {
                     ROS_INFO("Switching back to wall follow algorithm");
                     strat = 1;
@@ -417,7 +417,7 @@ private:
     int state;
     
     int contest_duration = 480;
-    int init_random_duration = 10;
+    int init_random_duration = 240;
     uint64_t wall_follow_stopped_time = 0;
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
