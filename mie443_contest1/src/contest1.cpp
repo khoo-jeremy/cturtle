@@ -326,21 +326,37 @@ public:
         
         // ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
 
-        if (regions[1] > d && regions[2] > d && regions[0] > d)
+        if ((regions[1] > d && regions[1] != INF) &&
+            (regions[2] > d && regions[2] != INF) &&
+            (regions[0] > d && regions[0] != INF))
             change_state(0);
-        else if ((regions[1] < d || regions[1] == INF) && regions[2] > d && regions[0] > d)
+        else if ((regions[1] < d || regions[1] == INF) && 
+                 (regions[2] > d && regions[2] != INF) &&
+                 (regions[0] > d && regions[0] != INF))
             change_state(1);
-        else if (regions[1] > d && regions[2] > d && (regions[0] < d || regions[0] == INF))
+        else if ((regions[1] > d && regions[1] != INF) &&
+                 (regions[2] > d && regions[2] != INF) &&
+                 (regions[0] < d || regions[0] == INF))
             change_state(2);
-        else if (regions[1] > d && (regions[2] < d || regions[2] == INF) && regions[0] > d)
+        else if ((regions[1] > d && regions[1] != INF) && 
+                 (regions[2] < d || regions[2] == INF) &&
+                 (regions[0] > d && regions[0] != INF))
             change_state(0);
-        else if ((regions[1] < d || regions[1] == INF) && regions[2] > d && (regions[0] < d || regions[0] == INF))
+        else if ((regions[1] < d || regions[1] == INF) && 
+                    regions[2] > d && 
+                 (regions[0] < d || regions[0] == INF))
             change_state(1);
-        else if ((regions[1] < d || regions[1] == INF) && (regions[2] < d || regions[2] == INF) && regions[0] > d)
+        else if ((regions[1] < d || regions[1] == INF) && 
+                 (regions[2] < d || regions[2] == INF) &&
+                 (regions[0] > d && regions[0] != INF))
             change_state(1);
-        else if ((regions[1] < d || regions[1] == INF) && (regions[2] < d || regions[2] == INF) && (regions[0] < d || regions[0] == INF))
+        else if ((regions[1] < d || regions[1] == INF) && 
+                 (regions[2] < d || regions[2] == INF) && 
+                 (regions[0] < d || regions[0] == INF))
             change_state(1);
-        else if (regions[1] > d && (regions[2] < d || regions[2] == INF) && (regions[0] < d || regions[0] == INF))
+        else if ((regions[1] > d && regions[1] != INF) && 
+                 (regions[2] < d || regions[2] == INF) && 
+                 (regions[0] < d || regions[0] == INF))
             change_state(0);
         else
             ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[1], regions[2], regions[3]);
