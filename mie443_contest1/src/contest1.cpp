@@ -28,18 +28,21 @@ public:
         ros::Rate loop_rate(10);
         start = std::chrono::system_clock::now();
 
-        while(ros::ok() && secondsElapsed <= 480) {
+        while(ros::ok() && secondsElapsed <= contest_duration) {
             ros::spinOnce();
-            if (secondsElapsed == 180){
+            if (secondsElapsed == init_random_duration){
+                // chnage from random exploration algorithm to wall follow algorithm
                 strat = 1;
             }
             // ROS_INFO("seconds elapsed: %i", secondsElapsed);
+
+            // turn 360 degrees every 45 seconds
+            if(secondsElapsed % 45 == 0){
+                map_surroundings();
+            }
+
             if (strat == 0){
-                if(secondsElapsed % 45 == 0){
-                    map_surroundings();
-                }else{
-                    turnAtWall();
-                }
+                turnAtWall();
             } else {
                 wallFollow();
             }
@@ -393,7 +396,7 @@ private:
     int minLaserIdx= 0;
     int right_turns= 0;
     int left_turns= 0;
-    int strat = 1;
+    int strat = 0;
     std::vector<std::pair<float, float>> loop_points; 
     int32_t nLasers= 0, desiredNLasers= 0, desiredAngle= 10; // desiredAngle * 2 = field of view
     uint8_t bumper[3]= {kobuki_msgs::BumperEvent::RELEASED, 
@@ -405,6 +408,8 @@ private:
     int state_; // 0 = find wall, 1 = turn left, 2 = follow wall
     int state;
     
+    int contest_duration = 480;
+    int init_random_duration = 10;
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
     std::chrono::time_point<std::chrono::system_clock> turn_start;
