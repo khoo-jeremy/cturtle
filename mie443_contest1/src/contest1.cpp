@@ -30,9 +30,10 @@ public:
 
         while(ros::ok() && secondsElapsed <= contest_duration) {
             ros::spinOnce();
-            if (secondsElapsed == init_random_duration){
+
+            if (secondsElapsed >= init_random_duration){
                 // chnage from random exploration algorithm to wall follow algorithm
-                ROS_INFO("Switching to wall follow algorithm");
+                // ROS_INFO("Switching to wall follow algorithm");
                 strat = 1;
             }
             // ROS_INFO("seconds elapsed: %i", secondsElapsed);
@@ -155,11 +156,11 @@ public:
 
         if(bumper0 == kobuki_msgs::BumperEvent::PRESSED) // left bumper hit
         {
-            turn(-1, 30); //turn right
+            turn(-1, 15); //turn right
         }
         if(bumper2 == kobuki_msgs::BumperEvent::PRESSED) // right bumper hit
         {
-            turn(1, 30); //turn left
+            turn(1, 15); //turn left
         }
         ROS_INFO("Bumper 0: %i  Bumper 2: %i", bumper0, bumper2);
     }
@@ -326,7 +327,7 @@ public:
         
         // ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
 
-        if (regions[1] < d || regions[1] == INF)                                                    // something is in front
+        if (regions[1] < 0.6 || regions[1] == INF)                                                    // something is in front
             change_state(1); // turn left
         else if ((regions[1] > d && regions[1] != INF) && (regions[0] > d && regions[0] != INF))    // nothing in the right or front
             change_state(0); // curl right
@@ -338,7 +339,7 @@ public:
         
     geometry_msgs::Twist find_wall(){
         geometry_msgs::Twist msg;
-        msg.linear.x = 0.2;
+        msg.linear.x = 0.1;
         msg.angular.z = -0.3;
         return msg;
     }
@@ -384,7 +385,7 @@ private:
     ros::Subscriber odom_sub;
     geometry_msgs::Twist vel;
 
-    const float ANGULAR_VEL= M_PI/3;
+    const float ANGULAR_VEL= M_PI/4;
     const float FORWARD_VEL= 0.25;
     float angular = 0.0;
     float linear = 0.0;
@@ -407,7 +408,7 @@ private:
     
     int contest_duration = 480;
     int init_random_duration = 240;
-    int alg_swap_interval = 60;
+    int alg_swap_interval = 30;
     uint64_t wall_follow_stopped_time = 0;
     std::chrono::time_point<std::chrono::system_clock> start;
     uint64_t secondsElapsed = 0;
