@@ -33,8 +33,12 @@ public:
 
             if (secondsElapsed >= init_random_duration){
                 // chnage from random exploration algorithm to wall follow algorithm
-                // ROS_INFO("Switching to wall follow algorithm");
-                strat = 1;
+                if(flag_init_alg_over)
+                {
+                    // ROS_INFO("Switching to wall follow algorithm");
+                    strat = 1;
+                    flag_init_alg_over = false;
+                }
             }
             // ROS_INFO("seconds elapsed: %i", secondsElapsed);
 
@@ -418,6 +422,7 @@ private:
 
     float wall_follow_start_pos[2] = {-1, -1};
     bool robot_left_initial_area = false;
+    bool flag_init_alg_over = true;
 };
 
 int main(int argc, char* argv[])
