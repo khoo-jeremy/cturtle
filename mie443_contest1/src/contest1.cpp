@@ -326,42 +326,6 @@ public:
         
         // ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[0], regions[1], regions[2]);
 
-        // if ((regions[1] > d && regions[1] != INF) &&
-        //     (regions[2] > d && regions[2] != INF) &&
-        //     (regions[0] > d && regions[0] != INF))
-        //     change_state(0);
-        // else if ((regions[1] < d || regions[1] == INF) && 
-        //          (regions[2] > d && regions[2] != INF) &&
-        //          (regions[0] > d && regions[0] != INF))
-        //     change_state(1);
-        // else if ((regions[1] > d && regions[1] != INF) &&
-        //          (regions[2] > d && regions[2] != INF) &&
-        //          (regions[0] < d || regions[0] == INF))
-        //     change_state(2);
-        // else if ((regions[1] > d && regions[1] != INF) && 
-        //          (regions[2] < d || regions[2] == INF) &&
-        //          (regions[0] > d && regions[0] != INF))
-        //     change_state(0);
-        // else if ((regions[1] < d || regions[1] == INF) && 
-        //          (regions[2] < d || regions[2] == INF) && 
-        //          (regions[0] < d || regions[0] == INF))
-        //     change_state(1);
-        // else if ((regions[1] < d || regions[1] == INF) && 
-        //          (regions[2] < d || regions[2] == INF) &&
-        //          (regions[0] > d && regions[0] != INF))
-        //     change_state(1);
-        // else if ((regions[1] < d || regions[1] == INF) && 
-        //          (regions[2] < d || regions[2] == INF) && 
-        //          (regions[0] < d || regions[0] == INF))
-        //     change_state(1);
-        // else if ((regions[1] > d && regions[1] != INF) && 
-        //          (regions[2] < d || regions[2] == INF) && 
-        //          (regions[0] < d || regions[0] == INF))
-        //     change_state(0);
-        // else
-        //     ROS_INFO("Right Region: %f. Front Region: %f. Left Region %f", regions[1], regions[2], regions[3]);
-
-
         if (regions[1] < d || regions[1] == INF)                                                    // something is in front
             change_state(1); // turn left
         else if ((regions[1] > d && regions[1] != INF) && (regions[0] > d && regions[0] != INF))    // nothing in the right or front
@@ -387,7 +351,7 @@ public:
     
     geometry_msgs::Twist follow_the_wall(){
         geometry_msgs::Twist msg;
-        msg.linear.x = FORWARD_VEL;
+        msg.linear.x = 0.1;
         return msg;
     }
 
