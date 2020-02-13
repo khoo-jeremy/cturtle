@@ -384,8 +384,7 @@ private:
     ros::Subscriber odom_sub;
     geometry_msgs::Twist vel;
 
-    // const float ANGULAR_VEL= M_PI/6;
-    const float ANGULAR_VEL= M_PI/2;
+    const float ANGULAR_VEL= M_PI/3;
     const float FORWARD_VEL= 0.25;
     float angular = 0.0;
     float linear = 0.0;
