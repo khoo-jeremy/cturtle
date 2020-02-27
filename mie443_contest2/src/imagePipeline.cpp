@@ -1,8 +1,19 @@
 #include <imagePipeline.h>
+#include <stdio.h>
+#include <iostream>
+#include "opencv2/core.hpp"
+#include "opencv2/features2d.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/calib3d.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/xfeatures2d.hpp"
+using namespace cv;
+using namespace cv::xfeatures2d;
 
 
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
-#define IMAGE_TOPIC "camera/rgb/image_raw" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
+// #define IMAGE_TOPIC "camera/rgb/image_raw" // kinect:"camera/rgb/image_raw" 
+#define IMAGE_TOPIC "camera/image"  // webcam:"camera/image"
 
 ImagePipeline::ImagePipeline(ros::NodeHandle& n) {
     image_transport::ImageTransport it(n);
@@ -35,8 +46,49 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         std::cout << "img.cols:" << img.cols << std::endl;
     } else {
         /***YOUR CODE HERE***/
-        // Use: boxes.template
-        cv::imshow("view", img);
+        Mat img_bw;
+
+        cv::cvtColor(img, img_bw, cv::COLOR_BGR2GRAY);
+
+        int minHessian = 400;
+
+        Ptr<SURF> detector = SURF::create(minHessian);
+
+        std::vector<KeyPoint> keypoints_img, keypoints_box;
+        Mat descriptors_img, descriptors_box;
+
+        detector->detectAndCompute(img, Mat(), keypoints_img, descriptors_img);
+        detector->detectAndCompute(boxes.templates[0], Mat(), keypoints_box, descriptors_box);
+
+        FlannBasedMatcher matcher;
+        std::vector< DMatch > matches;
+        matcher.match( descriptors_img, descriptors_img, descriptors_box, matches );
+        double max_dist = 0;
+        double min_dist = 100;
+
+        for(int i = 0;i < descriptors_img.rows;i++){
+            double dist = matches[i].distance;
+            if(dist < min_dist){
+                min_dist = dist;
+            }
+            if(dist > max_dist){
+                max_dist = dist;
+            }
+        }
+
+        std::vector<DMatch> good_matches;
+
+        for(int i= 0; i < descriptors_object.rows;i++){
+            if(matches[i].distance < 3 * min_dist){
+                good_matches.push_back(matches[i]);
+            }
+        }
+
+        Mat img_matchers;
+        drawMatches(img, keypoints_img, boxes.templates[0], keypoints_box, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+        cv::imshow("view", img_bw);
+        // cv::imshow("view", boxes.templates[0]);
         cv::waitKey(10);
     }  
     return template_id;
