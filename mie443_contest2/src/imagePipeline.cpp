@@ -34,7 +34,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         std::cout << "img.cols:" << img.cols << std::endl;
     } else {
         /***YOUR CODE HERE***/
-        // Use: boxes.templates
+        // Use: boxes.template
         cv::imshow("view", img);
         cv::waitKey(10);
     }  
