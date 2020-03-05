@@ -71,95 +71,110 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         std::cout << "img.cols:" << img.cols << std::endl;
     } else {
         /***YOUR CODE HERE***/
-        Mat img_bw;
 
         //convert to grayscale
-        cv::cvtColor(img, img_bw, cv::COLOR_BGR2GRAY);
-        //flip horizontally
-        // flip(img_bw, img_bw, +1);
+        Mat img_scene;
+        cv::cvtColor(img, img_scene, cv::COLOR_BGR2GRAY);
 
         std::cout << img_bw.size();
 
-        Mat img_scene= img_bw;
-        Mat img_object= boxes.templates[2];
+        // Mat img_object = boxes.templates[2];
 
         int minHessian = 400;
 
-        Ptr<SURF> detector = SURF::create(minHessian);
+        int count = 0;
+        for(auto img_object: boxes.templates)
+        {
+            for(int i=0; i<10; i++)
+            {
 
-        std::vector<KeyPoint> keypoints_object, keypoints_scene;
-        Mat descriptors_object, descriptors_scene;
+                Ptr<SURF> detector = SURF::create(minHessian);
 
-        detector->detectAndCompute(img_object, Mat(), keypoints_object, descriptors_object);
-        detector->detectAndCompute(img_scene, Mat(), keypoints_scene, descriptors_scene);
+                std::vector<KeyPoint> keypoints_object, keypoints_scene;
+                Mat descriptors_object, descriptors_scene;
 
-        FlannBasedMatcher matcher;
-        std::vector< DMatch > matches;
-        matcher.match(descriptors_object, descriptors_scene, matches);
-        double max_dist = 0;
-        double min_dist = 100;
+                detector->detectAndCompute(img_object, Mat(), keypoints_object, descriptors_object);
+                detector->detectAndCompute(img_scene, Mat(), keypoints_scene, descriptors_scene);
 
-        for(int i = 0;i < descriptors_object.rows;i++){
-            double dist = matches[i].distance;
-            if(dist < min_dist){
-                min_dist = dist;
+                FlannBasedMatcher matcher;
+                std::vector< DMatch > matches;
+                matcher.match(descriptors_object, descriptors_scene, matches);
+                double max_dist = 0;
+                double min_dist = 100;
+
+                for(int i = 0;i < descriptors_object.rows;i++){
+                    double dist = matches[i].distance;
+                    if(dist < min_dist){
+                        min_dist = dist;
+                    }
+                    if(dist > max_dist){
+                        max_dist = dist;
+                    }
+                }
+
+                std::vector<DMatch> good_matches;
+
+                for(int i= 0; i < descriptors_object.rows;i++){
+                    if(matches[i].distance < 3 * min_dist){
+                        good_matches.push_back(matches[i]);
+                    }
+                }
+
+                Mat img_matches;
+                drawMatches(img_object, keypoints_object, img_scene, keypoints_scene, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+                std::vector<Point2f> obj;
+                std::vector<Point2f> scene;
+
+                for(int i= 0;i < good_matches.size();i++){
+                    //Get the keypoints from the good matches
+                    obj.push_back(keypoints_object[good_matches[i].queryIdx].pt);
+                    scene.push_back(keypoints_scene[good_matches[i].trainIdx].pt);
+                }
+
+                Mat H= findHomography(obj, scene, RANSAC);
+
+                //Get the corners from the image_1 ( the object to be "detected" )
+                std::vector<Point2f> obj_corners(4);
+                obj_corners[0]= cvPoint(0,0);
+                obj_corners[1]= cvPoint(img_object.cols, 0);
+                obj_corners[2]= cvPoint(img_object.cols, img_object.rows);
+                obj_corners[3]= cvPoint(0, img_object.rows);
+                std::vector<Point2f> scene_corners(4);
+
+                perspectiveTransform(obj_corners, scene_corners, H);
+
+                // std::cout << H << std::endl;
+
+                ROS_INFO("%i", good_matches.size());
+
+                // Draw lines between the corners (the mapped object in the scene- image_2)
+                line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+                line(img_matches, scene_corners[1] + Point2f(img_object.cols, 0), scene_corners[2] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+                line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+                line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
+
+                bool match;
+                match = isRectangle(scene_corners);
+                if(!match)
+                    break;
+
+                std::cout << match << std::endl;
+
+                imshow("Good Matches & Object detection", img_matches);
+
+                // cv::imshow("view", img_bw);
+                // cv::imshow("view", boxes.templates[0]);
+                cv::waitKey(10);
             }
-            if(dist > max_dist){
-                max_dist = dist;
-            }
-            }
 
-        std::vector<DMatch> good_matches;
-
-        for(int i= 0; i < descriptors_object.rows;i++){
-            if(matches[i].distance < 3 * min_dist){
-                good_matches.push_back(matches[i]);
+            if(match)
+            {
+                template_id = count;
+                break;
             }
         }
-
-        Mat img_matches;
-        drawMatches(img_object, keypoints_object, img_scene, keypoints_scene, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-
-        std::vector<Point2f> obj;
-        std::vector<Point2f> scene;
-
-        for(int i= 0;i < good_matches.size();i++){
-            //Get the keypoints from the good matches
-            obj.push_back(keypoints_object[good_matches[i].queryIdx].pt);
-            scene.push_back(keypoints_scene[good_matches[i].trainIdx].pt);
-        }
-
-        Mat H= findHomography(obj, scene, RANSAC);
-
-        //Get the corners from the image_1 ( the object to be "detected" )
-        std::vector<Point2f> obj_corners(4);
-        obj_corners[0]= cvPoint(0,0);
-        obj_corners[1]= cvPoint(img_object.cols, 0);
-        obj_corners[2]= cvPoint(img_object.cols, img_object.rows);
-        obj_corners[3]= cvPoint(0, img_object.rows);
-        std::vector<Point2f> scene_corners(4);
-
-        perspectiveTransform(obj_corners, scene_corners, H);
-
-        // std::cout << H << std::endl;
-
-        ROS_INFO("%i", good_matches.size());
-
-        // Draw lines between the corners (the mapped object in the scene- image_2)
-        line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-        line(img_matches, scene_corners[1] + Point2f(img_object.cols, 0), scene_corners[2] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-        line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-        line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-
-        bool match;
-        match= isRectangle(scene_corners);
-        std::cout << match << std::endl;
-
-        imshow("Good Matches & Object detection", img_matches);
-
-        // cv::imshow("view", img_bw);
-        // cv::imshow("view", boxes.templates[0]);
-        cv::waitKey(10);
+        count++;
     }  
     return template_id;
 }
