@@ -62,7 +62,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
         FlannBasedMatcher matcher;
         std::vector< DMatch > matches;
-        matcher.match( descriptors_img, descriptors_img, descriptors_box, matches );
+        matcher.match(descriptors_img, descriptors_box, matches);
         double max_dist = 0;
         double min_dist = 100;
 
@@ -78,14 +78,45 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
         std::vector<DMatch> good_matches;
 
-        for(int i= 0; i < descriptors_object.rows;i++){
+        for(int i= 0; i < descriptors_img.rows;i++){
             if(matches[i].distance < 3 * min_dist){
                 good_matches.push_back(matches[i]);
             }
         }
 
-        Mat img_matchers;
+        //scene= boxes.templates[0], object=img
+
+        Mat img_matches;
         drawMatches(img, keypoints_img, boxes.templates[0], keypoints_box, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+        std::vector<Point2f> obj;
+        std::vector<Point2f> scene;
+
+        for(int i= 0;i < good_matches.size();i++){
+            //Get the keypoints from the good matches
+            obj.push_back(keypoints_img[good_matches[i].queryIdx].pt);
+            scene.push_back(keypoints_box[good_matches[i].trainIdx].pt);
+        }
+
+        Mat H= findHemography(obj, scene, RANSAC);
+
+        //Get the corners from the image_1 ( the object to be "detected" )
+        std::vector<Point2f> obj_corners(4);
+        obj_corners[0]= cvPoint(0,0);
+        obj_corners[1]= cvPoint(img.cols, 0);
+        obj_corners[2]= cvPoint(img.cols, img.rows);
+        obj_corners[3]= cvPoint(0, img.rows);
+        std::vector<Point2f> scene_corners(4);
+
+        perspectiveTransform(obj_corners, scene_corners, H);
+
+        // Draw lines between the corners (the mapped object in the scene- image_2)
+        line(img_matches, scene_corners[0] + Point2f(img.cols, 0), scene_corners[1] + Point2f(img.cols, 0), Scalar(0, 255, 0), 4);
+        line(img_matches, scene_corners[1] + Point2f(img.cols, 0), scene_corners[2] + Point2f(img.cols, 0), Scalar(0, 255, 0), 4);
+        line(img_matches, scene_corners[2] + Point2f(img.cols, 0), scene_corners[3] + Point2f(img.cols, 0), Scalar(0, 255, 0), 4);
+        line(img_matches, scene_corners[3] + Point2f(img.cols, 0), scene_corners[0] + Point2f(img.cols, 0), Scalar(0, 255, 0), 4);
+        
+        imshow("Good Matches & Object detection", img_matches);
 
         cv::imshow("view", img_bw);
         // cv::imshow("view", boxes.templates[0]);
