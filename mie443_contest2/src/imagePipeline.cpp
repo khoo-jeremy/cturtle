@@ -35,6 +35,31 @@ void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     }    
 }
 
+bool isRectangle(std::vector<Point2f> corners){
+    Point2f p1= corners[0];
+    Point2f p2= corners[1];
+    Point2f p3= corners[2];
+    Point2f p4= corners[3];
+    double cx, cy;
+    double dd1, dd2, dd3, dd4;
+
+    cx= (p1.x + p2.x + p3.x + p4.x)/4;
+    cy= (p1.y + p2.y + p3.y + p4.y)/4;
+
+    dd1= pow(cx - p1.x, 2) + pow(cy - p1.y, 2);
+    dd2= pow(cx - p2.x, 2) + pow(cy - p2.y, 2);
+    dd3= pow(cx - p3.x, 2) + pow(cy - p3.y, 2);
+    dd4= pow(cx - p4.x, 2) + pow(cy - p4.y, 2);
+
+    if(dd1 + dd3 > (dd2 + dd4) /1.5 && (dd1 + dd3) < (dd2 + dd4) * 1.5){
+        return true;
+    }else {
+        return false;
+    }
+
+    // std::cout << dd1 << "\t" << dd2 << "\t" << dd3 << "\t" << dd4 << std::endl;
+}
+
 int ImagePipeline::getTemplateID(Boxes& boxes) {
     int template_id = -1;
     if(!isValid) {
@@ -53,8 +78,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         //flip horizontally
         // flip(img_bw, img_bw, +1);
 
+        std::cout << img_bw.size();
+
         Mat img_scene= img_bw;
-        Mat img_object= boxes.templates[0];
+        Mat img_object= boxes.templates[2];
 
         int minHessian = 400;
 
@@ -114,12 +141,20 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
         perspectiveTransform(obj_corners, scene_corners, H);
 
+        // std::cout << H << std::endl;
+
+        ROS_INFO("%i", good_matches.size());
+
         // Draw lines between the corners (the mapped object in the scene- image_2)
         line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
         line(img_matches, scene_corners[1] + Point2f(img_object.cols, 0), scene_corners[2] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
         line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
         line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
-        
+
+        bool match;
+        match= isRectangle(scene_corners);
+        std::cout << match << std::endl;
+
         imshow("Good Matches & Object detection", img_matches);
 
         // cv::imshow("view", img_bw);

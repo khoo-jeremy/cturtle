@@ -1,4 +1,4 @@
 <launch>
   <node pkg="mie443_contest2" type="webcam_publisher" name="image_publisher" args="0"/>
-  <node pkg="mie443_contest2" type="contest2" name="contest2"/>
+  <node pkg="mie443_contest2" type="contest2" name="contest2" output="screen"/>
 </launch>
