@@ -29,7 +29,8 @@ int main(int argc, char** argv) {
         /***YOUR CODE HERE***/
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
-        imagePipeline.getTemplateID(boxes);
+        int id= imagePipeline.getTemplateID(boxes);
+        ROS_INFO("%i", id);
         ros::Duration(0.01).sleep();
     }
     return 0;

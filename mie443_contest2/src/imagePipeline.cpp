@@ -76,11 +76,13 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         Mat img_scene;
         cv::cvtColor(img, img_scene, cv::COLOR_BGR2GRAY);
 
-        std::cout << img_bw.size();
+        // std::cout << img_scene.size();
 
         // Mat img_object = boxes.templates[2];
 
         int minHessian = 400;
+
+        bool match=false;
 
         int count = 0;
         for(auto img_object: boxes.templates)
@@ -146,7 +148,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
                 // std::cout << H << std::endl;
 
-                ROS_INFO("%i", good_matches.size());
+                // ROS_INFO("%i", good_matches.size());
 
                 // Draw lines between the corners (the mapped object in the scene- image_2)
                 line(img_matches, scene_corners[0] + Point2f(img_object.cols, 0), scene_corners[1] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
@@ -154,7 +156,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
                 line(img_matches, scene_corners[2] + Point2f(img_object.cols, 0), scene_corners[3] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
                 line(img_matches, scene_corners[3] + Point2f(img_object.cols, 0), scene_corners[0] + Point2f(img_object.cols, 0), Scalar(0, 255, 0), 4);
 
-                bool match;
                 match = isRectangle(scene_corners);
                 if(!match)
                     break;
@@ -163,7 +164,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
                 imshow("Good Matches & Object detection", img_matches);
 
-                // cv::imshow("view", img_bw);
+                // cv::imshow("view", img_scene);
                 // cv::imshow("view", boxes.templates[0]);
                 cv::waitKey(10);
             }
@@ -173,8 +174,8 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
                 template_id = count;
                 break;
             }
+            count++;
         }
-        count++;
     }  
     return template_id;
 }
