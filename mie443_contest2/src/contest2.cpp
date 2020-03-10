@@ -3,6 +3,19 @@
 #include <robot_pose.h>
 #include <imagePipeline.h>
 
+int bestOfThree(std::vector<int> ids)
+{
+    int id;
+    if(ids[0]==ids[1] || ids[0]==ids[2])
+        id = ids[0];
+    else if(ids[1]==ids[2])
+        id = ids[1]
+    else
+        id = -2;
+    
+    return id;
+}
+
 int main(int argc, char** argv) {
     // Setup ROS.
     ros::init(argc, argv, "contest2");
@@ -29,7 +42,11 @@ int main(int argc, char** argv) {
         /***YOUR CODE HERE***/
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
-        int id= imagePipeline.getTemplateID(boxes);
+        std::vector<int> ids;
+        for(int i=0;i<3;i++)
+            ids.push_back(imagePipeline.getTemplateID(boxes));
+        int id = bestOfThree(ids);
+            
         ROS_INFO("%i", id);
         ros::Duration(0.01).sleep();
     }
