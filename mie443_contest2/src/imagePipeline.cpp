@@ -162,8 +162,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
                 match = matchImages(img_scene, img_object, minHessian);
                 if(!match)
                     break;
-
-                std::cout << match << std::endl;
             }
 
             if(match)

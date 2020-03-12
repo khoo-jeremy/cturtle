@@ -52,10 +52,17 @@ int main(int argc, char** argv) {
             z1 = boxes.coords[i][2] + M_PI;
         coordinates.push_back({x1, y1, z1});
     }
+
+    while(!robotPose.flag)
+    {
+        ros::spinOnce();
+        ROS_INFO("Waiting for robotPose to update");
+    }
+
     std::vector<float> origin;
     if (ros::ok()){
-        ros::spinOnce();
         ros::Duration(2).sleep();
+        ros::spinOnce();
         origin = {robotPose.x, robotPose.y, robotPose.phi};
         ROS_INFO("origin, (%f, %f, %f)", robotPose.x, robotPose.y, robotPose.phi);
 
