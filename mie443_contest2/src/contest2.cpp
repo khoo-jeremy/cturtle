@@ -1,5 +1,6 @@
 #include <boxes.h>
 #include <navigation.h>
+#include <nn.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
 #include <math.h>
@@ -13,7 +14,7 @@ int bestOfThree(std::vector<int> ids)
         id = ids[1];
     else
         id = -2;
-    
+
     return id;
 }
 
@@ -68,8 +69,28 @@ int main(int argc, char** argv) {
         for(int i=0;i<3;i++)
             ids.push_back(imagePipeline.getTemplateID(boxes));
         int id = bestOfThree(ids);
-            
         
+        // std::vector<std::vector<float>> test;
+        // std::vector<std::vector<float>> res;
+        // float f0 = 0;
+        // float f1 = 1;
+        // float f2 = 2;
+        // float f3 = 0.75;
+        // float f5 = 5;
+        // std::vector<float> val1{f1, f1, f0};
+        // test.push_back(val1);
+        // std::vector<float> val2{f2, f3, f0};
+        // test.push_back(val2);
+        // std::vector<float> val3{f0, f5, f0};
+        // test.push_back(val3);
+        // std::vector<float> val0{f0, f0, f0};
+        // res = nn(test, val0);
+        // for(int i = 0; i < res.size(); ++i) {
+        //     std::cout << "test path coordinates: " << std::endl;
+        //     std::cout << i << " x: " << res[i][0] << " y: " << res[i][1] << " z: " 
+        //             << res[i][2] << std::endl;
+        // }
+
         ros::Duration(0.01).sleep();
 
         if(id >= -1){
