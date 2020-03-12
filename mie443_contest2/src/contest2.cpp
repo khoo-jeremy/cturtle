@@ -55,7 +55,9 @@ int main(int argc, char** argv) {
     std::vector<float> origin;
     if (ros::ok()){
         ros::spinOnce();
+        ros::Duration(2).sleep();
         origin = {robotPose.x, robotPose.y, robotPose.phi};
+        ROS_INFO("origin, (%f, %f, %f)", robotPose.x, robotPose.y, robotPose.phi);
 
         coordinates = nn(coordinates, origin);
         for (int i = 0; i < coordinates.size(); i++)
@@ -83,19 +85,22 @@ int main(int argc, char** argv) {
 
         ros::spinOnce();
 
-        std::vector<int> ids;
-        for(int i=0;i<3;i++)
-            ids.push_back(imagePipeline.getTemplateID(boxes));
-        int id = bestOfThree(ids);
+        if(counter < coordinates.size() - 1)
+        {
+            std::vector<int> ids;
+            for(int i=0;i<3;i++)
+                ids.push_back(imagePipeline.getTemplateID(boxes));
+            int id = bestOfThree(ids);
 
-        ros::Duration(0.01).sleep();
+            ros::Duration(0.01).sleep();
 
-        if(id >= -1){
-            ROS_INFO("Template id: %i, @ Coordinates x : %f, y : %f", id, x, y);
-            myfile << id << x << y << "\n";
-            // cont= true;
-        }else{
-            ROS_INFO("Could not read image");
+            if(id >= -1){
+                ROS_INFO("Template id: %i, @ Coordinates x : %f, y : %f", id, x, y);
+                myfile << "Template id: " << id << ". X-pos: " << x << ". Y-pos: " << y << "\n";
+                // cont= true;
+            }else{
+                ROS_INFO("Could not read image");
+            }
         }
         counter++;
     }
