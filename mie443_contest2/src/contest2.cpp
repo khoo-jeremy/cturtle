@@ -52,6 +52,17 @@ int main(int argc, char** argv) {
             z1 = boxes.coords[i][2] + M_PI;
         coordinates.push_back({x1, y1, z1});
     }
+    std::vector<float> origin;
+    if (ros::ok()){
+        ros::spinOnce();
+        origin = {robotPose.x, robotPose.y, robotPose.phi};
+
+        coordinates = nn(coordinates, origin);
+        for (int i = 0; i < coordinates.size(); i++)
+            ROS_INFO("destination %i, (%f, %f, %f)", i, coordinates[i][0], coordinates[i][1], coordinates[i][2]);
+    }
+
+
 
     // Create a file
     std::ofstream myfile;
@@ -59,7 +70,7 @@ int main(int argc, char** argv) {
     
     int counter= 0;
     // bool cont;
-    while(ros::ok() and counter <= 4) {
+    while(ros::ok() && counter < coordinates.size()) {
         /***YOUR CODE HERE***/
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
