@@ -4,6 +4,7 @@
 #include <robot_pose.h>
 #include <imagePipeline.h>
 #include <math.h>
+#include <fstream>
 
 int bestOfThree(std::vector<int> ids)
 {
@@ -40,7 +41,6 @@ int main(int argc, char** argv) {
     ImagePipeline imagePipeline(n);
     // Execute strategy.
     std::vector<std::vector<float>> coordinates;
-
     for(int i=0;i<5;i++)
     {
         float x1 = boxes.coords[i][0]+ 0.8 * cos(boxes.coords[i][2]);
@@ -52,6 +52,10 @@ int main(int argc, char** argv) {
             z1 = boxes.coords[i][2] + M_PI;
         coordinates.push_back({x1, y1, z1});
     }
+
+    // Create a file
+    std::ofstream myfile;
+    myfile.open("contest2.txt");
     
     int counter= 0;
     // bool cont;
@@ -60,7 +64,10 @@ int main(int argc, char** argv) {
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
 
-        Navigation::moveToGoal(coordinates[counter][0], coordinates[counter][1], coordinates[counter][2]);
+        float x = coordinates[counter][0];
+        float y = coordinates[counter][1];
+        float z = coordinates[counter][2];
+        Navigation::moveToGoal(x, y, z);
         ros::Duration(2).sleep();
 
         ros::spinOnce();
@@ -69,37 +76,18 @@ int main(int argc, char** argv) {
         for(int i=0;i<3;i++)
             ids.push_back(imagePipeline.getTemplateID(boxes));
         int id = bestOfThree(ids);
-        
-        // std::vector<std::vector<float>> test;
-        // std::vector<std::vector<float>> res;
-        // float f0 = 0;
-        // float f1 = 1;
-        // float f2 = 2;
-        // float f3 = 0.75;
-        // float f5 = 5;
-        // std::vector<float> val1{f1, f1, f0};
-        // test.push_back(val1);
-        // std::vector<float> val2{f2, f3, f0};
-        // test.push_back(val2);
-        // std::vector<float> val3{f0, f5, f0};
-        // test.push_back(val3);
-        // std::vector<float> val0{f0, f0, f0};
-        // res = nn(test, val0);
-        // for(int i = 0; i < res.size(); ++i) {
-        //     std::cout << "test path coordinates: " << std::endl;
-        //     std::cout << i << " x: " << res[i][0] << " y: " << res[i][1] << " z: " 
-        //             << res[i][2] << std::endl;
-        // }
 
         ros::Duration(0.01).sleep();
 
         if(id >= -1){
-            ROS_INFO("%i", id);
+            ROS_INFO("Template id: %i, @ Coordinates x : %f, y : %f", id, x, y);
+            myfile << id << x << y << "\n";
             // cont= true;
         }else{
             ROS_INFO("Could not read image");
         }
         counter++;
     }
+    myfile.close();
     return 0;
 }
