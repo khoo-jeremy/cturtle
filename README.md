@@ -1,6 +1,7 @@
 # cturtle
 
 Group Number: 24
+
 ---
 Commands to run code on gazebo:
 
@@ -11,6 +12,7 @@ roslaunch turtlebot_rviz_launchers view_navigation.launch
 **localize the turtlebot by performing the 2D pose estimate on RVIZ**
 
 rosrun mie443_contest2 contest2
+
 ---
 The output file is found at:
 
