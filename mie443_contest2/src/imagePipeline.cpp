@@ -56,19 +56,11 @@ bool isRectangle(std::vector<Point2f> corners){
         Point2f length = cvPoint(p2.x - p1.x, p2.y - p1.y);
         Point2f width = cvPoint(p4.x - p1.x, p4.y - p1.y);
         float area = std::abs(length.x*width.y - width.x*length.y);
-        // ROS_INFO("area: %f", area);
         if(area < 8000) return false;
         return true;
     }else {
         return false;
     }
-    // if(dd1 + dd3 > (dd2 + dd4) /1.5 && (dd1 + dd3) < (dd2 + dd4) * 1.5){
-    //     return true;
-    // }else {
-    //     return false;
-    // }
-
-    // std::cout << dd1 << "\t" << dd2 << "\t" << dd3 << "\t" << dd4 << std::endl;
 }
 
 bool matchImages(Mat img_scene, Mat img_object, int minHessian)
@@ -157,8 +149,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         std::cout << "img.rows:" << img.rows << std::endl;
         std::cout << "img.cols:" << img.cols << std::endl;
     } else {
-        /***YOUR CODE HERE***/
-
         //convert to grayscale
         Mat img_scene;
         cv::cvtColor(img, img_scene, cv::COLOR_BGR2GRAY);
