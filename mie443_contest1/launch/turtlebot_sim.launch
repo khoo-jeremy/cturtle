@@ -1,0 +1,5 @@
+<launch>
+    <include file="$(find mie443_contest1)/launch/turtlebot_world.launch"/>
+    <node pkg="mie443_contest1" type="contest1" name="contest1" output="screen"/>
+    <node pkg="mie443_contest1" type="dumb_alg.py" name="wall_follower_node" output="screen"/>
+</launch>

@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
+  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">
+    <arg name="map_file" value="$(find mie443_contest2)/maps/map_1.yaml" />
+  </include>
+  <include file="$(find turtlebot_rviz_launchers)/launch/view_navigation.launch"/>
+  <!-- <node pkg="mie443_contest2" type="contest2" name="contest2" output="screen"/> -->
+</launch>
