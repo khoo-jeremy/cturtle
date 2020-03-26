@@ -52,10 +52,21 @@ bool isRectangle(std::vector<Point2f> corners){
     dd4= pow(cx - p4.x, 2) + pow(cy - p4.y, 2);
 
     if(dd1 + dd3 > (dd2 + dd4) /1.5 && (dd1 + dd3) < (dd2 + dd4) * 1.5){
+        // check if it detected the background cereal tag by determining the area of the parallelogram (area = cross product of width and length)
+        Point2f length = cvPoint(p2.x - p1.x, p2.y - p1.y);
+        Point2f width = cvPoint(p4.x - p1.x, p4.y - p1.y);
+        float area = std::abs(length.x*width.y - width.x*length.y);
+        // ROS_INFO("area: %f", area);
+        if(area < 8000) return false;
         return true;
     }else {
         return false;
     }
+    // if(dd1 + dd3 > (dd2 + dd4) /1.5 && (dd1 + dd3) < (dd2 + dd4) * 1.5){
+    //     return true;
+    // }else {
+    //     return false;
+    // }
 
     // std::cout << dd1 << "\t" << dd2 << "\t" << dd3 << "\t" << dd4 << std::endl;
 }
